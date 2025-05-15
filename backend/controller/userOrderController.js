@@ -1,0 +1,206 @@
+const Order = require("../models/Order");
+const stripe = require("stripe")(`${process.env.STRIPE_KEY}` || null);
+const mongoose = require("mongoose");
+const { handleProductQuantity } = require("../config/others");
+const { formatAmountForStripe } = require("../config/stripe");
+
+const addOrder = async (req, res) => {
+  try {
+    const orderData = {
+      ...req.body,
+      user: req.user._id,
+    };
+
+    orderData.prescriptions = req.body.prescriptions;
+
+    const newOrder = new Order(orderData);
+    const order = await newOrder.save();
+
+    await handleProductQuantity(order.cart);
+
+    res.status(201).send({ order });
+  } catch (err) {
+    console.error("Order creation failed:", err);
+    res
+      .status(500)
+      .send({ message: "Failed to create order. Please try again." });
+  }
+};
+
+const createPaymentIntent = async (req, res) => {
+  const { total: amount, cardInfo: payment_intent } = req.body;
+  if (!(amount >= process.env.MIN_AMOUNT && amount <= process.env.MAX_AMOUNT)) {
+    return res.status(500).json({ message: "Invalid amount." });
+  }
+  if (payment_intent.id) {
+    try {
+      const current_intent = await stripe.paymentIntents.retrieve(
+        payment_intent.id
+      );
+      if (current_intent) {
+        const updated_intent = await stripe.paymentIntents.update(
+          payment_intent.id,
+          {
+            amount: formatAmountForStripe(amount, process.env.CURRENCY),
+          }
+        );
+        return res.send(updated_intent);
+      }
+    } catch (err) {
+      if (err.code !== "resource_missing") {
+        const errorMessage =
+          err instanceof Error ? err.message : "Internal server error";
+        return res.status(500).send({ message: errorMessage });
+      }
+    }
+  }
+  try {
+    const params = {
+      amount: formatAmountForStripe(amount, process.env.CURRENCY),
+      currency: process.env.CURRENCY,
+      description: process.env.STRIPE_PAYMENT_DESCRIPTION ?? "",
+      automatic_payment_methods: {
+        enabled: true,
+      },
+    };
+    const payment_intent = await stripe.paymentIntents.create(params);
+    res.send(payment_intent);
+  } catch (err) {
+    const errorMessage =
+      err instanceof Error ? err.message : "Internal server error";
+    res.status(500).send({ message: errorMessage });
+  }
+};
+
+const getOrderByUser = async (req, res) => {
+  try {
+    const { page, limit } = req.query;
+
+    const pages = Number(page) || 1;
+    const limits = Number(limit) || 8;
+    const skip = (pages - 1) * limits;
+
+    const totalDoc = await Order.countDocuments({ user: req.user._id });
+
+    const totalPendingOrder = await Order.aggregate([
+      {
+        $match: {
+          status: "Pending",
+          user: new mongoose.Types.ObjectId(req.user._id),
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$total" },
+          count: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const totalProcessingOrder = await Order.aggregate([
+      {
+        $match: {
+          status: "Processing",
+          user: new mongoose.Types.ObjectId(req.user._id),
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$total" },
+          count: {
+            $sum: 1,
+          },
+        },
+      },
+    ]);
+
+    const totalDeliveredOrder = await Order.aggregate([
+      {
+        $match: {
+          status: "Delivered",
+          user: new mongoose.Types.ObjectId(req.user._id),
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$total" },
+          count: {
+            $sum: 1,
+          },
+        },
+      },
+    ]);
+
+    const orders = await Order.find({ user: req.user._id })
+      .sort({ _id: -1 })
+      .skip(skip)
+      .limit(limits);
+
+    res.send({
+      orders,
+      limits,
+      pages,
+      pending: totalPendingOrder.length === 0 ? 0 : totalPendingOrder[0].count,
+      processing:
+        totalProcessingOrder.length === 0 ? 0 : totalProcessingOrder[0].count,
+      delivered:
+        totalDeliveredOrder.length === 0 ? 0 : totalDeliveredOrder[0].count,
+
+      totalDoc,
+    });
+  } catch (err) {
+    res.status(500).send({
+      message: err.message,
+    });
+  }
+};
+
+const getOrderById = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    res.send(order);
+  } catch (err) {
+    res.status(500).send({
+      message: err.message,
+    });
+  }
+};
+
+const getUserPrescriptions = async (req, res) => {
+  try {
+    const prescriptions = await Order.aggregate([
+      {
+        $match: {
+          user: new mongoose.Types.ObjectId(req.user._id),
+        },
+      },
+      {
+        $unwind: "$prescriptions",
+      },
+      {
+        $project: {
+          _id: 0,
+          url: "$prescriptions",
+          orderId: "$_id",
+          invoice: "$invoice",
+          createdAt: "$createdAt",
+        },
+      },
+    ]);
+
+    res.send({ prescriptions });
+  } catch (err) {
+    res.status(500).send({ message: err.message });
+  }
+};
+
+module.exports = {
+  addOrder,
+  getOrderById,
+  getOrderByUser,
+  createPaymentIntent,
+  getUserPrescriptions,
+};
