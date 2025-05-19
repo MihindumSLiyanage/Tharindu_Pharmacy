@@ -132,7 +132,7 @@ const Navbar = () => {
                     </a>
                   </Link>
                 ) : (
-                  <span onClick={() => setLoginModalOpen(!loginModalOpen)}>
+                  <span onClick={() => setModalOpen(!modalOpen)}>
                     <FiUser className="w-6 h-6 drop-shadow-xl" />
                   </span>
                 )}

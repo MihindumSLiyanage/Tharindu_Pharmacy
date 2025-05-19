@@ -69,11 +69,6 @@ const pages = [
     href: "/terms-and-conditions",
     icon: HiOutlineDocumentText,
   },
-  {
-    title: "Reservation",
-    href: "/reservation",
-    icon: FiAlertCircle,
-  },
 ];
 
 const userSidebar = [
