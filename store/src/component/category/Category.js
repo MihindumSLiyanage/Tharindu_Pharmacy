@@ -34,9 +34,10 @@ const Category = () => {
             {categories.map(({ _id, name, icon, children }) => (
               <CategoryCard
                 key={_id}
+                id={_id}
                 name={name}
                 icon={icon}
-                nested={children || []}
+                children={children || []}
               />
             ))}
           </div>
