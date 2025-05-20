@@ -31,7 +31,13 @@ const verifyEmailAddress = async (req, res) => {
 const registerUser = async (req, res) => {
   try {
     const token = req.params.token;
-    const { name, email, password } = jwt.decode(token);
+    const decodedToken = jwt.decode(token);
+
+    if (!decodedToken)
+      return res.status(400).send({ message: "Invalid token!" });
+
+    const { name, email, password } = decodedToken;
+
     const isAdded = await User.findOne({ email: email });
 
     if (isAdded) {

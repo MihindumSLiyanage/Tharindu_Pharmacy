@@ -17,7 +17,7 @@ const {
 router.post("/verify-email", verifyEmailAddress);
 
 //register a user
-router.post("/register", registerUser);
+router.post("/register/:token", registerUser);
 
 //login a user
 router.post("/login", loginUser);
