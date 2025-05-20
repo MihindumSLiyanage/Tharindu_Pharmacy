@@ -6,7 +6,7 @@ import useLoginSubmit from "@hooks/useLoginSubmit";
 
 const Register = ({ setModalOpen }) => {
   const { handleSubmit, submitHandler, register, errors, loading } =
-    useLoginSubmit(setModalOpen);
+    useLoginSubmit("register", setModalOpen);
 
   return (
     <>
@@ -30,10 +30,8 @@ const Register = ({ setModalOpen }) => {
               placeholder="Full Name"
               Icon={FiUser}
             />
-
             <Error errorName={errors.name} />
           </div>
-
           <div className="form-group">
             <InputArea
               register={register}
@@ -54,10 +52,8 @@ const Register = ({ setModalOpen }) => {
               placeholder="Password"
               Icon={FiLock}
             />
-
             <Error errorName={errors.password} />
           </div>
-
           <button
             disabled={loading}
             type="submit"

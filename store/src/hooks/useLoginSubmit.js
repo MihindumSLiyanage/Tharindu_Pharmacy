@@ -7,7 +7,7 @@ import UserServices from "@services/UserServices";
 import { UserContext } from "@context/UserContext";
 import { notifyError, notifySuccess } from "@utils/toast";
 
-const useLoginSubmit = (setModalOpen) => {
+const useLoginSubmit = (mode, setModalOpen) => {
   const router = useRouter();
   const { redirect } = router.query;
   const { dispatch } = useContext(UserContext);
@@ -20,15 +20,12 @@ const useLoginSubmit = (setModalOpen) => {
     formState: { errors },
   } = useForm();
 
-  const submitHandler = ({ name, email, verifyEmail, password }) => {
+  const submitHandler = (data) => {
     setLoading(true);
     const cookieTimeOut = 0.5;
 
-    if (email && password) {
-      UserServices.userLogin({
-        email,
-        password,
-      })
+    if (mode === "login") {
+      UserServices.userLogin({ email: data.email, password: data.password })
         .then((res) => {
           setLoading(false);
           setModalOpen(false);
@@ -40,12 +37,15 @@ const useLoginSubmit = (setModalOpen) => {
           });
         })
         .catch((err) => {
-          notifyError(err ? err.response.data.message : err.message);
           setLoading(false);
+          notifyError(err?.response?.data?.message || err.message);
         });
-    }
-    if (name && email && password) {
-      UserServices.verifyEmailAddress({ name, email, password })
+    } else if (mode === "register") {
+      UserServices.verifyEmailAddress({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+      })
         .then((res) => {
           setLoading(false);
           setModalOpen(false);
@@ -53,19 +53,18 @@ const useLoginSubmit = (setModalOpen) => {
         })
         .catch((err) => {
           setLoading(false);
-          notifyError(err.response.data.message);
+          notifyError(err?.response?.data?.message || err.message);
         });
-    }
-    if (verifyEmail) {
-      UserServices.forgotPassword({ verifyEmail })
+    } else if (mode === "forgot") {
+      UserServices.forgotPassword({ verifyEmail: data.verifyEmail })
         .then((res) => {
           setLoading(false);
           notifySuccess(res.message);
-          setValue("verifyEmail");
+          setValue("verifyEmail", "");
         })
         .catch((err) => {
           setLoading(false);
-          notifyError(err ? err.response.data.message : err.message);
+          notifyError(err?.response?.data?.message || err.message);
         });
     }
   };

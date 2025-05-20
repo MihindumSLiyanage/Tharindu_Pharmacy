@@ -1,51 +1,49 @@
 import React, { useState } from "react";
-
 import Login from "@component/login/Login";
 import Register from "@component/login/Register";
 import ResetPassword from "@component/login/ResetPassword";
 
 const Common = ({ setModalOpen }) => {
-  const [showRegister, setShowRegister] = useState(false);
-  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [mode, setMode] = useState("login");
+  const handleToggle = () => {
+    if (mode === "register") {
+      setMode("login");
+    } else {
+      setMode("register");
+    }
+  };
 
-  const handleModal = () => {
-    setShowRegister(!showRegister);
-    setShowResetPassword(false);
+  const renderForm = () => {
+    if (mode === "forgot") {
+      return <ResetPassword setMode={setMode} setModalOpen={setModalOpen} />;
+    } else if (mode === "register") {
+      return <Register setMode={setMode} setModalOpen={setModalOpen} />;
+    } else {
+      return <Login setMode={setMode} setModalOpen={setModalOpen} />;
+    }
   };
 
   return (
-    <>
-      <div className="overflow-hidden bg-white mx-auto">
-        {showResetPassword ? (
-          <ResetPassword
-            setShowResetPassword={setShowResetPassword}
-            setModalOpen={setModalOpen}
-          />
-        ) : showRegister ? (
-          <Register
-            setShowResetPassword={setShowResetPassword}
-            setModalOpen={setModalOpen}
-          />
-        ) : (
-          <Login
-            setShowResetPassword={setShowResetPassword}
-            setModalOpen={setModalOpen}
-          />
-        )}
-
-        <div className="text-center text-sm text-gray-900 mt-4">
-          <div className="text-gray-500 mt-2.5">
-            {showRegister ? "Already have a account ?" : "Not have a account ?"}
+    <div className="overflow-hidden bg-white mx-auto">
+      {renderForm()}
+      <div className="text-center text-sm text-gray-900 mt-4">
+        <div className="text-gray-500 mt-2.5">
+          {mode === "register"
+            ? "Already have an account?"
+            : mode === "login"
+            ? "Don't have an account?"
+            : null}
+          {mode !== "forgot" && (
             <button
-              onClick={handleModal}
+              onClick={handleToggle}
               className="text-gray-800 hover:text-emerald-500 font-bold mx-2"
             >
-              {showRegister ? "Login" : "Register"}
+              {mode === "register" ? "Login" : "Register"}
             </button>
-          </div>
+          )}
         </div>
       </div>
-    </>
+    </div>
   );
 };
 

@@ -4,9 +4,9 @@ import Error from "@component/form/Error";
 import useLoginSubmit from "@hooks/useLoginSubmit";
 import InputArea from "@component/form/InputArea";
 
-const Login = ({ setShowResetPassword, setModalOpen }) => {
+const Login = ({ setMode, setModalOpen }) => {
   const { handleSubmit, submitHandler, register, errors, loading } =
-    useLoginSubmit(setModalOpen);
+    useLoginSubmit("login", setModalOpen);
 
   return (
     <>
@@ -21,43 +21,38 @@ const Login = ({ setShowResetPassword, setModalOpen }) => {
         className="flex flex-col justify-center"
       >
         <div className="grid grid-cols-1 gap-5">
-          <div className="form-group">
-            <InputArea
-              register={register}
-              defaultValue="kasunis1234@gmail.com"
-              label="Email"
-              name="email"
-              type="email"
-              placeholder="Email"
-              Icon={FiMail}
-            />
-            <Error errorName={errors.email} />
-          </div>
-          <div className="form-group">
-            <InputArea
-              register={register}
-              defaultValue="123456"
-              label="Password"
-              name="password"
-              type="password"
-              placeholder="Password"
-              Icon={FiLock}
-            />
+          <InputArea
+            register={register}
+            defaultValue="kasunis1234@gmail.com"
+            label="Email"
+            name="email"
+            type="email"
+            placeholder="Email"
+            Icon={FiMail}
+          />
+          <Error errorName={errors.email} />
 
-            <Error errorName={errors.password} />
+          <InputArea
+            register={register}
+            defaultValue="123456"
+            label="Password"
+            name="password"
+            type="password"
+            placeholder="Password"
+            Icon={FiLock}
+          />
+          <Error errorName={errors.password} />
+
+          <div className="flex items-center justify-end">
+            <button
+              type="button"
+              onClick={() => setMode("forgot")}
+              className="text-sm text-heading ps-3 hover:no-underline focus:outline-none"
+            >
+              Forgot password?
+            </button>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex ms-auto">
-              <button
-                type="button"
-                onClick={() => setShowResetPassword(true)}
-                className="text-end text-sm text-heading ps-3 hover:no-underline focus:outline-none"
-              >
-                Forgot password?
-              </button>
-            </div>
-          </div>
           <button
             disabled={loading}
             type="submit"
