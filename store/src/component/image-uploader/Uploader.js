@@ -68,6 +68,7 @@ const Uploader = ({
       });
       const uploadedUrl = response.data.secure_url;
       setImageUrls((prev) => (append ? [...prev, uploadedUrl] : [uploadedUrl]));
+      notifySuccess("Image uploaded successfully.");
     } catch (err) {
       notifyError("Upload failed. Try again.");
       console.error("Cloudinary upload error:", err);
