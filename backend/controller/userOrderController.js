@@ -1,6 +1,6 @@
-const Order = require("../models/Order");
-const stripe = require("stripe")(`${process.env.STRIPE_KEY}` || null);
 const mongoose = require("mongoose");
+const Order = require("../models/Order");
+const stripe = require("stripe")(`${process.env.STRIPE_KEY}`);
 const { handleProductQuantity } = require("../config/others");
 const { formatAmountForStripe } = require("../config/stripe");
 
@@ -27,6 +27,7 @@ const addOrder = async (req, res) => {
   }
 };
 
+//create payment intent for stripe
 const createPaymentIntent = async (req, res) => {
   const { total: amount, cardInfo: payment_intent } = req.body;
   if (!(amount >= process.env.MIN_AMOUNT && amount <= process.env.MAX_AMOUNT)) {
@@ -75,64 +76,23 @@ const createPaymentIntent = async (req, res) => {
 const getOrderByUser = async (req, res) => {
   try {
     const { page, limit } = req.query;
-
     const pages = Number(page) || 1;
     const limits = Number(limit) || 8;
     const skip = (pages - 1) * limits;
 
     const totalDoc = await Order.countDocuments({ user: req.user._id });
 
-    const totalPendingOrder = await Order.aggregate([
-      {
-        $match: {
-          status: "Pending",
-          user: new mongoose.Types.ObjectId(req.user._id),
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$total" },
-          count: { $sum: 1 },
-        },
-      },
-    ]);
+    const pipeline = (status) => [
+      { $match: { status, user: new mongoose.Types.ObjectId(req.user._id) } },
+      { $group: { _id: null, total: { $sum: "$total" }, count: { $sum: 1 } } },
+    ];
 
-    const totalProcessingOrder = await Order.aggregate([
-      {
-        $match: {
-          status: "Processing",
-          user: new mongoose.Types.ObjectId(req.user._id),
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$total" },
-          count: {
-            $sum: 1,
-          },
-        },
-      },
-    ]);
-
-    const totalDeliveredOrder = await Order.aggregate([
-      {
-        $match: {
-          status: "Delivered",
-          user: new mongoose.Types.ObjectId(req.user._id),
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$total" },
-          count: {
-            $sum: 1,
-          },
-        },
-      },
-    ]);
+    const [totalPendingOrder, totalProcessingOrder, totalDeliveredOrder] =
+      await Promise.all([
+        Order.aggregate(pipeline("Pending")),
+        Order.aggregate(pipeline("Processing")),
+        Order.aggregate(pipeline("Delivered")),
+      ]);
 
     const orders = await Order.find({ user: req.user._id })
       .sort({ _id: -1 })
@@ -143,18 +103,13 @@ const getOrderByUser = async (req, res) => {
       orders,
       limits,
       pages,
-      pending: totalPendingOrder.length === 0 ? 0 : totalPendingOrder[0].count,
-      processing:
-        totalProcessingOrder.length === 0 ? 0 : totalProcessingOrder[0].count,
-      delivered:
-        totalDeliveredOrder.length === 0 ? 0 : totalDeliveredOrder[0].count,
-
+      pending: totalPendingOrder[0]?.count || 0,
+      processing: totalProcessingOrder[0]?.count || 0,
+      delivered: totalDeliveredOrder[0]?.count || 0,
       totalDoc,
     });
   } catch (err) {
-    res.status(500).send({
-      message: err.message,
-    });
+    res.status(500).send({ message: err.message });
   }
 };
 
@@ -163,23 +118,15 @@ const getOrderById = async (req, res) => {
     const order = await Order.findById(req.params.id);
     res.send(order);
   } catch (err) {
-    res.status(500).send({
-      message: err.message,
-    });
+    res.status(500).send({ message: err.message });
   }
 };
 
 const getUserPrescriptions = async (req, res) => {
   try {
     const prescriptions = await Order.aggregate([
-      {
-        $match: {
-          user: new mongoose.Types.ObjectId(req.user._id),
-        },
-      },
-      {
-        $unwind: "$prescriptions",
-      },
+      { $match: { user: new mongoose.Types.ObjectId(req.user._id) } },
+      { $unwind: "$prescriptions" },
       {
         $project: {
           _id: 0,
@@ -199,8 +146,8 @@ const getUserPrescriptions = async (req, res) => {
 
 module.exports = {
   addOrder,
+  createPaymentIntent,
   getOrderById,
   getOrderByUser,
-  createPaymentIntent,
   getUserPrescriptions,
 };

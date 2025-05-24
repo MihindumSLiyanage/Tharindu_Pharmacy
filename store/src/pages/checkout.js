@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { CardElement } from "@stripe/react-stripe-js";
@@ -20,6 +20,7 @@ import useCheckoutSubmit from "@hooks/useCheckoutSubmit";
 import InputShipping from "@component/form/InputShipping";
 import Uploader from "@component/image-uploader/Uploader";
 import useTranslation from "next-translate/useTranslation";
+import cityShipping from "@utils/cityShipping";
 
 const Checkout = () => {
   const {
@@ -27,11 +28,10 @@ const Checkout = () => {
     submitHandler,
     handleShippingCost,
     register,
+    error,
     errors,
     showCard,
     setShowCard,
-    error,
-    stripe,
     coupon,
     couponRef,
     handleCouponCode,
@@ -48,6 +48,18 @@ const Checkout = () => {
   } = useCheckoutSubmit();
 
   const { t } = useTranslation();
+
+  const [selectedCity, setSelectedCity] = useState("");
+  const [cityShippingCost, setCityShippingCost] = useState(0);
+
+  const handleCityChange = (e) => {
+    const cityName = e.target.value;
+    setSelectedCity(cityName);
+    const found = cityShipping.find((city) => city.name === cityName);
+    const cost = found ? found.cost : 0;
+    setCityShippingCost(cost);
+    handleShippingCost(cost);
+  };
 
   return (
     <>
@@ -123,13 +135,19 @@ const Checkout = () => {
                         <Error errorName={errors.address} />
                       </div>
                       <div className="col-span-6 sm:col-span-3">
-                        <InputArea
-                          register={register}
-                          label={t("common:city")}
-                          name="city"
-                          type="text"
-                          placeholder="Kurunegala"
-                        />
+                        <Label label={t("common:city")} />
+                        <select
+                          value={selectedCity}
+                          onChange={handleCityChange}
+                          className="form-select w-full h-12 px-4 py-2 rounded border border-gray-200 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        >
+                          <option value="">Select City</option>
+                          {cityShipping.map((city) => (
+                            <option key={city.name} value={city.name}>
+                              {city.name}
+                            </option>
+                          ))}
+                        </select>
                         <Error errorName={errors.city} />
                       </div>
                     </div>
@@ -137,22 +155,30 @@ const Checkout = () => {
                     <div className="grid grid-cols-6 gap-6">
                       <div className="col-span-6 sm:col-span-3">
                         <InputShipping
-                          handleShippingCost={handleShippingCost}
                           register={register}
-                          value="FedEx"
-                          time="Today"
-                          cost={60}
+                          value="Pickup From the Store"
+                          description="Collect your order at the pharmacy"
+                          cost={0}
+                          handleShippingCost={() => {
+                            setSelectedCity("Pickup From the Store");
+                            setCityShippingCost(0);
+                            handleShippingCost(0);
+                          }}
                         />
-                        <Error errorName={errors.shippingOption} />
                       </div>
-                      <div className="col-span-6 sm:col-span-3">
-                        <InputShipping
-                          handleShippingCost={handleShippingCost}
-                          register={register}
-                          value="UPS"
-                          time="7 Days"
-                          cost={20}
-                        />
+                      <div className="col-span-6 sm:col-span-3 space-y-2">
+                        {selectedCity &&
+                          selectedCity !== "Pickup From the Store" && (
+                            <InputShipping
+                              register={register}
+                              value={selectedCity}
+                              description={`Delivery to ${selectedCity}`}
+                              cost={cityShippingCost}
+                              handleShippingCost={() => {
+                                handleShippingCost(cityShippingCost);
+                              }}
+                            />
+                          )}
                         <Error errorName={errors.shippingOption} />
                       </div>
                     </div>
@@ -172,7 +198,6 @@ const Checkout = () => {
                     <div className="grid grid-cols-6 gap-6">
                       <div className="col-span-6 sm:col-span-3">
                         <InputPayment
-                          setShowCard={setShowCard}
                           register={register}
                           name={t("common:cashOnDelivery")}
                           value="Cash"
@@ -188,7 +213,7 @@ const Checkout = () => {
                           value="Card"
                           Icon={ImCreditCard}
                         />
-                        <Error errorName={errors.paymentMethod} />
+                        <Error errorMessage={errors.paymentMethod} />
                       </div>
                     </div>
                   </div>

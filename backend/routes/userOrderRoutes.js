@@ -11,7 +11,7 @@ const {
 // Add an order
 router.post("/add", addOrder);
 
-// Create Stripe payment intent
+// create stripe payment intent
 router.post("/create-payment-intent", createPaymentIntent);
 
 // Get all prescriptions for the logged-in user

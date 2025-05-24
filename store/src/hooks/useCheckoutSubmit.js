@@ -16,7 +16,7 @@ const useCheckoutSubmit = () => {
     state: { userInfo, shippingAddress },
     dispatch,
   } = useContext(UserContext);
-  
+
   const [error, setError] = useState("");
   const [total, setTotal] = useState("");
   const [coupon, setCoupon] = useState(null);
@@ -65,13 +65,16 @@ const useCheckoutSubmit = () => {
   }, [cartTotal, shippingCost, coupon]);
 
   const calculateDiscount = (cartTotal, coupon) => {
-    let discountAmount = 0;
     if (coupon?.discount?.type === "fixed") {
-      discountAmount = coupon?.discount?.value || 0;
+      return coupon?.discount?.value || 0;
     } else if (coupon?.discount?.type === "percentage") {
-      discountAmount = (cartTotal * (coupon?.discount?.value || 0)) / 100;
+      return (cartTotal * (coupon?.discount?.value || 0)) / 100;
     }
-    return discountAmount;
+    return 0;
+  };
+
+  const handleShippingCost = (cost) => {
+    setShippingCost(cost);
   };
 
   useEffect(() => {
@@ -95,157 +98,128 @@ const useCheckoutSubmit = () => {
     const prescriptionRequired = items.some(
       (item) => item.requiresPrescription
     );
-
     if (prescriptionRequired && imageUrls.length === 0) {
       notifyError("Prescription is required for item in your cart.");
       setIsCheckoutSubmit(false);
       return;
     }
 
-    let userInfoData = {
-      name: `${data.firstName} ${data.lastName}`,
-      contact: data.contact,
-      email: data.email,
-      address: data.address,
-      city: data.city,
-    };
-
     const orderData = {
-      user_info: userInfoData,
-      shippingOption: data.shippingOption,
-      paymentMethod: data.paymentMethod,
-      status: "Pending",
       cart: items,
+      user_info: {
+        name: `${data.firstName} ${data.lastName}`,
+        contact: data.contact,
+        email: data.email,
+        address: data.address,
+        city: data.city,
+      },
+      shippingOption: data.shippingOption,
       subTotal: cartTotal,
-      shippingCost: shippingCost,
+      shippingCost,
       discount: discountAmount,
-      total: total,
+      total,
+      paymentMethod: data.paymentMethod,
       prescriptions: imageUrls,
+      status: "Pending",
       user: userInfo?._id,
       coupon: coupon?._id,
     };
 
-    if (data.paymentMethod === "Card") {
-      if (!stripe || !elements) {
-        return;
-      }
-
-      try {
-        const { error, paymentMethod } = await stripe.createPaymentMethod({
-          type: "card",
-          card: elements.getElement(CardElement),
-        });
-
-        if (error) {
-          setError(error.message);
+    try {
+      if (data.paymentMethod === "Card") {
+        if (!stripe || !elements) {
+          notifyError("Stripe is not ready. Please wait a moment.");
           setIsCheckoutSubmit(false);
           return;
         }
 
-        const { client_secret } = await OrderServices.createPaymentIntent(
-          orderData
-        );
+        const { error: stripeError, paymentMethod } =
+          await stripe.createPaymentMethod({
+            type: "card",
+            card: elements.getElement(CardElement),
+          });
 
-        const { paymentIntent } = await stripe.confirmCardPayment(
-          client_secret,
+        if (stripeError) {
+          setError(stripeError.message);
+          setIsCheckoutSubmit(false);
+          return;
+        }
+
+        const paymentIntent = await OrderServices.createPaymentIntent({
+          ...orderData,
+          total: Math.round(total * 100),
+          cardInfo: paymentMethod,
+        });
+
+        const confirmResult = await stripe.confirmCardPayment(
+          paymentIntent.client_secret,
           {
-            payment_method: paymentMethod.id,
+            payment_method: {
+              card: elements.getElement(CardElement),
+            },
           }
         );
 
-        if (paymentIntent.status === "succeeded") {
-          const orderWithCard = {
-            ...orderData,
-            paymentId: paymentIntent.id,
-          };
-
-          completeOrder(orderWithCard);
-        } else {
-          notifyError("Payment failed, please try again.");
+        if (confirmResult.error) {
+          setError(confirmResult.error.message);
+          notifyError(confirmResult.error.message);
           setIsCheckoutSubmit(false);
+          return;
         }
-      } catch (err) {
-        notifyError(err?.response?.data?.message || err.message);
-        setIsCheckoutSubmit(false);
-      }
-    } else if (data.paymentMethod === "Cash") {
-      completeOrder(orderData);
-    }
-  };
 
-  const completeOrder = async (orderData) => {
-    try {
-      const res = await OrderServices.addOrder(orderData);
-      router.push(`/order/${res.order._id}`);
-      notifySuccess("Your Order Confirmed!");
-      Cookies.remove("coupon");
-      emptyCart();
-      sessionStorage.removeItem("products");
+        const finalOrder = {
+          ...orderData,
+          cardInfo: confirmResult.paymentIntent,
+        };
+
+        const res = await OrderServices.addOrder(finalOrder);
+
+        router.push(`/order/${res.order._id}`);
+        notifySuccess("Your order was placed successfully!");
+        Cookies.remove("coupon");
+        emptyCart();
+        sessionStorage.removeItem("products");
+      }
     } catch (err) {
-      notifyError(err?.response?.data?.message || err.message);
-    } finally {
+      notifyError(err.message || "Something went wrong.");
       setIsCheckoutSubmit(false);
     }
   };
 
-  const handleShippingCost = (value) => {
-    setShippingCost(value);
-  };
-
-  const handleCouponCode = (e) => {
+  const handleCouponCode = async (e) => {
     e.preventDefault();
-    const couponCode = couponRef.current.value;
 
-    if (!couponCode) {
-      notifyError("Please Input a Coupon Code!");
+    if (!couponRef.current.value) {
+      notifyError("Please input a coupon code");
       return;
     }
 
-    const foundCoupon = coupons?.find(
-      (coupon) => coupon.couponCode === couponCode
+    const matched = coupons?.find(
+      (cp) => cp.couponCode === couponRef.current.value
     );
 
-    if (!foundCoupon) {
-      notifyError("Please Input a Valid Coupon!");
+    if (!matched) {
+      notifyError("Invalid coupon code");
       return;
     }
 
-    if (dayjs().isAfter(dayjs(foundCoupon?.endTime))) {
-      notifyError("This coupon is not valid!");
+    if (dayjs().isAfter(dayjs(matched.endTime))) {
+      notifyError("This coupon has expired");
       return;
     }
 
-    if (cartTotal < foundCoupon?.minimumAmount) {
-      notifyError(
-        `Minimum Rs. ${foundCoupon.minimumAmount} required for Apply this coupon!`
-      );
+    if (cartTotal < matched.minimumAmount) {
+      notifyError(`Minimum order value is ${matched.minimumAmount}`);
       return;
     }
 
-    if (foundCoupon.status !== "show") {
-      notifyError("This coupon is not active.");
-      return;
-    }
-
-    notifySuccess(
-      `Your Coupon ${foundCoupon.title} is Applied on ${foundCoupon.productType}!`
-    );
+    setCoupon(matched);
     setIsCouponApplied(true);
-    setCoupon(foundCoupon);
-    Cookies.set("coupon", JSON.stringify(foundCoupon));
-  };
-
-  const removeCoupon = () => {
-    setCoupon(null);
-    Cookies.remove("coupon");
-    setIsCouponApplied(false);
-    notifySuccess("Coupon removed.");
+    Cookies.set("coupon", JSON.stringify(matched));
+    notifySuccess("Coupon applied successfully!");
   };
 
   return {
-    handleSubmit,
-    submitHandler,
-    handleShippingCost,
     register,
     errors,
     showCard,
@@ -254,16 +228,19 @@ const useCheckoutSubmit = () => {
     stripe,
     coupon,
     couponRef,
-    handleCouponCode,
-    discountAmount,
-    shippingCost,
     total,
     isEmpty,
     items,
     cartTotal,
+    handleSubmit,
+    submitHandler,
+    handleCouponCode,
+    discountAmount,
+    shippingCost,
+    setShippingCost,
+    handleShippingCost,
     isCheckoutSubmit,
     isCouponApplied,
-    removeCoupon,
     imageUrls,
     setImageUrls,
   };

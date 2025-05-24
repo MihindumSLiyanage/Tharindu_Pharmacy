@@ -64,14 +64,11 @@ const orderSchema = new mongoose.Schema(
   }
 );
 
-const Order =
-  mongoose.models.Order ||
-  mongoose.model(
-    "Order",
-    orderSchema.plugin(AutoIncrement, {
-      inc_field: "invoice",
-      start_seq: 10000,
-    })
-  );
+orderSchema.plugin(AutoIncrement, {
+  inc_field: "invoice",
+  start_seq: 10000,
+});
+
+const Order = mongoose.models.Order || mongoose.model("Order", orderSchema);
 
 module.exports = Order;

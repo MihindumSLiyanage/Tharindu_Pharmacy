@@ -13,8 +13,8 @@ const OrderServices = {
     return requests.get(`/order?limit=${limit}&page=${page}`);
   },
 
-  getOrderById: async (id, body) => {
-    return requests.get(`/order/${id}`, body);
+  getOrderById: async (id) => {
+    return requests.get(`/order/${id}`);
   },
 
   getPrescriptionsByUser: async () => {
