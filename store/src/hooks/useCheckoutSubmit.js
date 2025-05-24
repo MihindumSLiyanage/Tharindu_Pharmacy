@@ -220,6 +220,7 @@ const useCheckoutSubmit = () => {
   };
 
   return {
+    stripe,
     register,
     errors,
     showCard,

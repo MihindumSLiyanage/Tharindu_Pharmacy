@@ -28,6 +28,7 @@ const Checkout = () => {
     submitHandler,
     handleShippingCost,
     register,
+    stripe,
     error,
     errors,
     showCard,
