@@ -120,6 +120,13 @@ const UpdateProfile = () => {
                       <div className="col-span-6 sm:col-span-3">
                         <InputArea
                           register={register}
+                          validation={{
+                            required: "Phone number is required",
+                            pattern: {
+                              value: /^\d{10}$/,
+                              message: "Phone number must be exactly 10 number",
+                            },
+                          }}
                           label="Phone/Mobile"
                           name="phone"
                           type="tel"

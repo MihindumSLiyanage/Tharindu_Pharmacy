@@ -199,6 +199,7 @@ const Checkout = () => {
                     <div className="grid grid-cols-6 gap-6">
                       <div className="col-span-6 sm:col-span-3">
                         <InputPayment
+                          setShowCard={setShowCard}
                           register={register}
                           name={t("common:cashOnDelivery")}
                           value="Cash"

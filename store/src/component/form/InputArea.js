@@ -9,6 +9,7 @@ const InputArea = ({
   type,
   placeholder,
   Icon,
+  validation = {},
 }) => {
   return (
     <>
@@ -24,6 +25,7 @@ const InputArea = ({
         <input
           {...register(`${name}`, {
             required: `${label} is required!`,
+            ...validation,
           })}
           defaultValue={defaultValue}
           type={type}
