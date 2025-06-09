@@ -141,6 +141,7 @@ const useCheckoutSubmit = () => {
 
         if (stripeError) {
           setError(stripeError.message);
+          notifyError(stripeError.message);
           setIsCheckoutSubmit(false);
           return;
         }
@@ -173,7 +174,13 @@ const useCheckoutSubmit = () => {
         };
 
         const res = await OrderServices.addOrder(finalOrder);
-
+        router.push(`/order/${res.order._id}`);
+        notifySuccess("Your order was placed successfully!");
+        Cookies.remove("coupon");
+        emptyCart();
+        sessionStorage.removeItem("products");
+      } else {
+        const res = await OrderServices.addOrder(orderData);
         router.push(`/order/${res.order._id}`);
         notifySuccess("Your order was placed successfully!");
         Cookies.remove("coupon");
@@ -219,6 +226,13 @@ const useCheckoutSubmit = () => {
     notifySuccess("Coupon applied successfully!");
   };
 
+  const removeCoupon = () => {
+    setCoupon(null);
+    setIsCouponApplied(false);
+    Cookies.remove("coupon");
+    notifySuccess("Coupon removed successfully!");
+  };
+
   return {
     stripe,
     register,
@@ -244,6 +258,7 @@ const useCheckoutSubmit = () => {
     isCouponApplied,
     imageUrls,
     setImageUrls,
+    removeCoupon,
   };
 };
 
