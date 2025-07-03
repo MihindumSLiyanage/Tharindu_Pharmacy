@@ -2,7 +2,7 @@ import React, { useEffect, useContext, useState } from "react";
 import { useRouter } from "next/router";
 import Cookies from "js-cookie";
 import { notifySuccess, notifyError } from "@utils/toast";
-import UserServices from "@services/UserServices";
+import CustomerServices from "@services/CustomerServices";
 import { UserContext } from "@context/UserContext";
 import Loading from "@component/preloader/Loading";
 
@@ -15,7 +15,7 @@ const EmailVerification = () => {
   useEffect(() => {
     if (!token) return;
 
-    UserServices.userRegister(token)
+    CustomerServices.customerRegister(token)
       .then((res) => {
         notifySuccess("Email verified. Welcome!");
         dispatch({ type: "USER_LOGIN", payload: res });

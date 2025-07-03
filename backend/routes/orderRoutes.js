@@ -6,7 +6,7 @@ const {
   getOrderCustomer,
   updateOrder,
   deleteOrder,
-  bestSellerProductChart,
+  getBestSellerProductChart,
   getDashboardOrders,
   getDashboardRecentOrder,
   getDashboardCount,
@@ -29,7 +29,7 @@ router.get("/dashboard-count", getDashboardCount);
 router.get("/dashboard-amount", getDashboardAmount);
 
 // chart data for product
-router.get("/best-seller/chart", bestSellerProductChart);
+router.get("/best-seller/chart", getBestSellerProductChart);
 
 //get all order by a user
 router.get("/customer/:id", getOrderCustomer);

@@ -8,7 +8,7 @@ const addOrder = async (req, res) => {
   try {
     const orderData = {
       ...req.body,
-      user: req.user._id,
+      customer: req.body.customer,
     };
 
     orderData.prescriptions = req.body.prescriptions;
@@ -73,18 +73,37 @@ const createPaymentIntent = async (req, res) => {
   }
 };
 
-const getOrderByUser = async (req, res) => {
+const getOrderByCustomer = async (req, res) => {
   try {
+    const customerId = req.query.customer;
+
+    if (!mongoose.Types.ObjectId.isValid(customerId)) {
+      return res.status(400).send({ message: "Invalid customer ID" });
+    }
+
     const { page, limit } = req.query;
     const pages = Number(page) || 1;
     const limits = Number(limit) || 8;
     const skip = (pages - 1) * limits;
 
-    const totalDoc = await Order.countDocuments({ user: req.user._id });
+    const totalDoc = await Order.countDocuments({
+      customer: customerId,
+    });
 
     const pipeline = (status) => [
-      { $match: { status, user: new mongoose.Types.ObjectId(req.user._id) } },
-      { $group: { _id: null, total: { $sum: "$total" }, count: { $sum: 1 } } },
+      {
+        $match: {
+          status,
+          customer: new mongoose.Types.ObjectId(customerId),
+        },
+      },
+      {
+        $group: {
+          _id: null,
+          total: { $sum: "$total" },
+          count: { $sum: 1 },
+        },
+      },
     ];
 
     const [totalPendingOrder, totalProcessingOrder, totalDeliveredOrder] =
@@ -94,7 +113,7 @@ const getOrderByUser = async (req, res) => {
         Order.aggregate(pipeline("Delivered")),
       ]);
 
-    const orders = await Order.find({ user: req.user._id })
+    const orders = await Order.find({ customer: customerId })
       .sort({ _id: -1 })
       .skip(skip)
       .limit(limits);
@@ -122,10 +141,11 @@ const getOrderById = async (req, res) => {
   }
 };
 
-const getUserPrescriptions = async (req, res) => {
+const getCustomerPrescriptions = async (req, res) => {
   try {
+    const customerId = req.query.customer;
     const prescriptions = await Order.aggregate([
-      { $match: { user: new mongoose.Types.ObjectId(req.user._id) } },
+      { $match: { customer: new mongoose.Types.ObjectId(customerId) } },
       { $unwind: "$prescriptions" },
       {
         $project: {
@@ -148,6 +168,6 @@ module.exports = {
   addOrder,
   createPaymentIntent,
   getOrderById,
-  getOrderByUser,
-  getUserPrescriptions,
+  getOrderByCustomer,
+  getCustomerPrescriptions,
 };

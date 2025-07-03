@@ -29,7 +29,7 @@ const adminSchema = new mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: ["admin", "pharmacist", "doctor"],
+      enum: ["admin", "pharmacist"],
       default: "admin",
     },
     joiningDate: {
@@ -37,16 +37,6 @@ const adminSchema = new mongoose.Schema(
       required: false,
     },
     address: {
-      type: String,
-      required: false,
-    },
-    specialization: {
-      // For doctors
-      type: String,
-      required: false,
-    },
-    licenseNumber: {
-      // For pharmacists and doctors
       type: String,
       required: false,
     },

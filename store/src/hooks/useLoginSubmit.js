@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import { useContext, useState } from "react";
 import { useForm } from "react-hook-form";
 
-import UserServices from "@services/UserServices";
+import CustomerServices from "@services/CustomerServices";
 import { UserContext } from "@context/UserContext";
 import { notifyError, notifySuccess } from "@utils/toast";
 
@@ -25,7 +25,10 @@ const useLoginSubmit = (mode, setModalOpen) => {
     const cookieTimeOut = 0.5;
 
     if (mode === "login") {
-      UserServices.userLogin({ email: data.email, password: data.password })
+      CustomerServices.customerLogin({
+        email: data.email,
+        password: data.password,
+      })
         .then((res) => {
           setLoading(false);
           setModalOpen(false);
@@ -41,7 +44,7 @@ const useLoginSubmit = (mode, setModalOpen) => {
           notifyError(err?.response?.data?.message || err.message);
         });
     } else if (mode === "register") {
-      UserServices.verifyEmailAddress({
+      CustomerServices.verifyEmailAddress({
         name: data.name,
         email: data.email,
         password: data.password,
@@ -56,7 +59,7 @@ const useLoginSubmit = (mode, setModalOpen) => {
           notifyError(err?.response?.data?.message || err.message);
         });
     } else if (mode === "forgot") {
-      UserServices.forgotPassword({ verifyEmail: data.verifyEmail })
+      CustomerServices.forgotPassword({ verifyEmail: data.verifyEmail })
         .then((res) => {
           setLoading(false);
           notifySuccess(res.message);

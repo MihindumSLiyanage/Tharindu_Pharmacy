@@ -1,7 +1,6 @@
 import React, { useContext, useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import { IoDocumentText } from "react-icons/io5";
-import { notifySuccess, notifyError } from "@utils/toast";
 import Dashboard from "@pages/user/dashboard";
 import OrderServices from "@services/OrderServices";
 import Loading from "@component/preloader/Loading";
@@ -20,7 +19,7 @@ const MyPrescriptions = () => {
   const fetchPrescriptions = async () => {
     try {
       setLoading(true);
-      const response = await OrderServices.getPrescriptionsByUser();
+      const response = await OrderServices.getPrescriptionsByCustomer();
       if (response && response.prescriptions) {
         setPrescriptions(response.prescriptions);
       } else {

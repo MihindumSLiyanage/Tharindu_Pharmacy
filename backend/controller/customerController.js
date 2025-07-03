@@ -7,11 +7,11 @@ const {
   generatePasswordResetEmail,
   generateEmailVerificationEmail,
 } = require("../config/emailTemplates");
-const User = require("../models/User");
+const Customer = require("../models/Customer");
 
 const verifyEmailAddress = async (req, res) => {
   try {
-    const isAdded = await User.findOne({ email: req.body.email });
+    const isAdded = await Customer.findOne({ email: req.body.email });
 
     if (isAdded) {
       return res.status(403).send({
@@ -28,7 +28,7 @@ const verifyEmailAddress = async (req, res) => {
   }
 };
 
-const registerUser = async (req, res) => {
+const registerCustomer = async (req, res) => {
   try {
     const token = req.params.token;
     const decodedToken = jwt.decode(token);
@@ -38,7 +38,7 @@ const registerUser = async (req, res) => {
 
     const { name, email, password } = decodedToken;
 
-    const isAdded = await User.findOne({ email: email });
+    const isAdded = await Customer.findOne({ email: email });
 
     if (isAdded) {
       const token = signInToken(isAdded);
@@ -58,18 +58,18 @@ const registerUser = async (req, res) => {
             message: "Token Expired, Please try again!",
           });
         } else {
-          const newUser = new User({
+          const newCustomer = new Customer({
             name,
             email,
             password: bcrypt.hashSync(password),
           });
-          newUser.save();
-          const token = signInToken(newUser);
+          newCustomer.save();
+          const token = signInToken(newCustomer);
           res.send({
             token,
-            _id: newUser._id,
-            name: newUser.name,
-            email: newUser.email,
+            _id: newCustomer._id,
+            name: newCustomer.name,
+            email: newCustomer.email,
             message: "Email Verified, Please Login Now!",
           });
         }
@@ -80,25 +80,25 @@ const registerUser = async (req, res) => {
   }
 };
 
-const loginUser = async (req, res) => {
+const loginCustomer = async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.body.email });
+    const customer = await Customer.findOne({ email: req.body.email });
 
     if (
-      user &&
-      user.password &&
-      bcrypt.compareSync(req.body.password, user.password)
+      customer &&
+      customer.password &&
+      bcrypt.compareSync(req.body.password, customer.password)
     ) {
-      const token = signInToken(user);
+      const token = signInToken(customer);
       res.send({
         token,
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        address: user.address,
-        phone: user.phone,
-        image: user.image,
-        gender: user.gender,
+        _id: customer._id,
+        name: customer.name,
+        email: customer.email,
+        address: customer.address,
+        phone: customer.phone,
+        image: customer.image,
+        gender: customer.gender,
       });
     } else {
       res.status(401).send({ message: "Invalid email or password!" });
@@ -110,15 +110,15 @@ const loginUser = async (req, res) => {
 
 const forgotPassword = async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.body.verifyEmail });
+    const customer = await Customer.findOne({ email: req.body.verifyEmail });
 
-    if (!user) {
+    if (!customer) {
       return res.status(404).send({
-        message: "User Not found with this email!",
+        message: "Customer Not found with this email!",
       });
     } else {
-      const token = tokenForVerify(user);
-      const emailBody = generatePasswordResetEmail(user.email, token);
+      const token = tokenForVerify(customer);
+      const emailBody = generatePasswordResetEmail(customer.email, token);
 
       sendEmail(emailBody, res, "Please check your email to reset password!");
     }
@@ -130,7 +130,7 @@ const forgotPassword = async (req, res) => {
 const resetPassword = async (req, res) => {
   const token = req.body.token;
   const { email } = jwt.decode(token);
-  const user = await User.findOne({ email: email });
+  const customer = await Customer.findOne({ email: email });
 
   if (token) {
     jwt.verify(token, process.env.JWT_SECRET_FOR_VERIFY, (err, decoded) => {
@@ -139,8 +139,8 @@ const resetPassword = async (req, res) => {
           message: "Token expired, please try again!",
         });
       } else {
-        user.password = bcrypt.hashSync(req.body.newPassword);
-        user.save();
+        customer.password = bcrypt.hashSync(req.body.newPassword);
+        customer.save();
         res.send({
           message: "Your password change successful, you can login now!",
         });
@@ -151,18 +151,18 @@ const resetPassword = async (req, res) => {
 
 const changePassword = async (req, res) => {
   try {
-    const user = await User.findOne({ email: req.body.email });
-    if (!user.password) {
+    const customer = await Customer.findOne({ email: req.body.email });
+    if (!customer.password) {
       return res.send({
         message:
           "For change password,You need to sign in with email & password!",
       });
     } else if (
-      user &&
-      bcrypt.compareSync(req.body.currentPassword, user.password)
+      customer &&
+      bcrypt.compareSync(req.body.currentPassword, customer.password)
     ) {
-      user.password = bcrypt.hashSync(req.body.newPassword);
-      await user.save();
+      customer.password = bcrypt.hashSync(req.body.newPassword);
+      await customer.save();
       res.send({
         message: "Your password change successfully!",
       });
@@ -178,75 +178,76 @@ const changePassword = async (req, res) => {
   }
 };
 
-const getAllUsers = async (_req, res) => {
+const getAllCustomers = async (_req, res) => {
   try {
-    const users = await User.find({}).sort({ _id: -1 });
+    const users = await Customer.find({}).sort({ _id: -1 });
     res.send(users);
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
 };
 
-const getUserById = async (req, res) => {
+const getCustomerById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).send({ message: "User not found!" });
-    res.send(user);
+    const customer = await Customer.findById(req.params.id);
+    if (!customer)
+      return res.status(404).send({ message: "Customer not found!" });
+    res.send(customer);
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
 };
 
-const updateUser = async (req, res) => {
+const updateCustomer = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id);
-    if (user) {
-      user.name = req.body.name;
-      user.email = req.body.email;
-      user.phone = req.body.phone;
-      user.address = req.body.address;
-      user.image = req.body.image;
-      user.gender = req.body.gender || user.gender;
-      const updatedUser = await user.save();
-      const token = signInToken(updatedUser);
+    const customer = await Customer.findById(req.params.id);
+    if (customer) {
+      customer.name = req.body.name;
+      customer.email = req.body.email;
+      customer.phone = req.body.phone;
+      customer.address = req.body.address;
+      customer.image = req.body.image;
+      customer.gender = req.body.gender || customer.gender;
+      const updatedCustomer = await customer.save();
+      const token = signInToken(updatedCustomer);
       res.send({
         token,
-        _id: updatedUser._id,
-        name: updatedUser.name,
-        email: updatedUser.email,
-        address: updatedUser.address,
-        phone: updatedUser.phone,
-        image: updatedUser.image,
-        gender: updatedUser.gender,
+        _id: updatedCustomer._id,
+        name: updatedCustomer.name,
+        email: updatedCustomer.email,
+        address: updatedCustomer.address,
+        phone: updatedCustomer.phone,
+        image: updatedCustomer.image,
+        gender: updatedCustomer.gender,
       });
     } else {
-      res.status(404).send({ message: "User not found" });
+      res.status(404).send({ message: "Customer not found" });
     }
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
 };
 
-const deleteUser = async (req, res) => {
+const deleteCustomer = async (req, res) => {
   try {
-    const result = await User.deleteOne({ _id: req.params.id });
+    const result = await Customer.deleteOne({ _id: req.params.id });
     if (result.deletedCount === 0)
-      return res.status(404).send({ message: "User not found!" });
-    res.send({ message: "User deleted successfully!" });
+      return res.status(404).send({ message: "Customer not found!" });
+    res.send({ message: "Customer deleted successfully!" });
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
 };
 
 module.exports = {
-  loginUser,
-  registerUser,
+  loginCustomer,
+  registerCustomer,
   verifyEmailAddress,
   forgotPassword,
   changePassword,
   resetPassword,
-  getAllUsers,
-  getUserById,
-  updateUser,
-  deleteUser,
+  getAllCustomers,
+  getCustomerById,
+  updateCustomer,
+  deleteCustomer,
 };

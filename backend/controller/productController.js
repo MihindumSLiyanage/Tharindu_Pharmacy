@@ -14,7 +14,9 @@ const addProduct = async (req, res) => {
 // Get all products
 const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find({}).sort({ _id: -1 });
+    const products = await Product.find({})
+      .populate({ path: "category", select: "name _id" })
+      .sort({ _id: -1 });
     res.send(products);
   } catch (err) {
     res.status(500).send({ message: err.message });
@@ -117,17 +119,13 @@ const updateStatus = async (req, res) => {
 // Delete product
 const deleteProduct = async (req, res) => {
   try {
-    Product.deleteOne({ _id: req.params.id }, (err) => {
-      if (err) {
-        res.status(500).send({
-          message: err.message,
-        });
-      } else {
-        res.status(200).send({
-          message: "Product Deleted Successfully!",
-        });
-      }
-    });
+    const result = await Product.deleteOne({ _id: req.params.id });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).send({ message: "Product not found." });
+    }
+
+    res.status(200).send({ message: "Product Deleted Successfully!" });
   } catch (err) {
     res.status(500).send({ message: err.message });
   }

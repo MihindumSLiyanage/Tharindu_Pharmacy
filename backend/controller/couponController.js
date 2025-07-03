@@ -12,16 +12,6 @@ const addCoupon = async (req, res) => {
   }
 };
 
-// Add multiple coupons
-const addAllCoupon = async (req, res) => {
-  try {
-    await Coupon.insertMany(req.body);
-    res.status(201).send({ message: "Coupons Added successfully!" });
-  } catch (err) {
-    res.status(500).send({ message: err.message });
-  }
-};
-
 // Get all coupons
 const getAllCoupons = async (req, res) => {
   try {
@@ -80,6 +70,31 @@ const updateCoupon = async (req, res) => {
   }
 };
 
+// Update status
+const updateStatus = async (req, res) => {
+  try {
+    const newStatus = req.body.status;
+
+    await Coupon.updateOne(
+      { _id: req.params.id },
+      {
+        $set: {
+          status: newStatus,
+        },
+      }
+    );
+    res.status(200).send({
+      message: `Coupon ${
+        newStatus === "show" ? "Published" : "Un-Published"
+      } Successfully!`,
+    });
+  } catch (err) {
+    res.status(500).send({
+      message: err.message,
+    });
+  }
+};
+
 // Delete coupon
 const deleteCoupon = async (req, res) => {
   try {
@@ -95,8 +110,8 @@ const deleteCoupon = async (req, res) => {
 
 module.exports = {
   addCoupon,
-  addAllCoupon,
   getAllCoupons,
+  updateStatus,
   getCouponById,
   updateCoupon,
   deleteCoupon,

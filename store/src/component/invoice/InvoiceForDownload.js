@@ -162,10 +162,10 @@ const InvoiceForDownload = ({ data }) => {
             </View>
             <View>
               <Text style={styles.title}>INVOICE TO</Text>
-              <Text style={styles.info}>{data?.user_info?.name}</Text>
+              <Text style={styles.info}>{data?.customer_info?.name}</Text>
               <Text style={styles.info}>
                 {" "}
-                {data?.user_info?.address.substring(0, 25)}
+                {data?.customer_info?.address.substring(0, 25)}
               </Text>
             </View>
           </View>

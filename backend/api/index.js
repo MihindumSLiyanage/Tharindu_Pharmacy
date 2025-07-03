@@ -18,8 +18,8 @@ const languageRoutes = require("../routes/languageRoutes");
 const orderRoutes = require("../routes/orderRoutes");
 const productRoutes = require("../routes/productRoutes");
 const supplierRoutes = require("../routes/supplierRoutes");
-const userRoutes = require("../routes/userRoutes");
-const userOrderRoutes = require("../routes/userOrderRoutes");
+const customerRoutes = require("../routes/customerRoutes");
+const customerOrderRoutes = require("../routes/customerOrderRoutes");
 
 // Initialize App
 const app = express();
@@ -41,10 +41,10 @@ app.get("/", (req, res) => {
 app.use("/api/category", categoryRoutes);
 app.use("/api/coupon", couponRoutes);
 app.use("/api/languages", languageRoutes);
-app.use("/api/order", isAuth, userOrderRoutes);
+app.use("/api/order", isAuth, customerOrderRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/supplier", supplierRoutes);
-app.use("/api/user", userRoutes);
+app.use("/api/customer", customerRoutes);
 
 // API Routes For Admin
 app.use("/api/admin", adminRoutes);

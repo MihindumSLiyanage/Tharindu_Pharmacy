@@ -72,11 +72,11 @@ const Invoice = ({ data, printRef }) => {
               Invoice To.
             </span>
             <span className="text-sm text-gray-500 block">
-              {data?.user_info?.name} <br />
-              {data?.user_info?.email}{" "}
-              <span className="ml-2">{data?.user_info?.contact}</span>
+              {data?.customer_info?.name} <br />
+              {data?.customer_info?.email}{" "}
+              <span className="ml-2">{data?.customer_info?.contact}</span>
               <br />
-              {data?.user_info?.address}
+              {data?.customer_info?.address}
               <br />
               {data?.city}
             </span>

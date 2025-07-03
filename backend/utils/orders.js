@@ -1,12 +1,12 @@
 const orders = [
   {
-    user: "61531a4f1c38473378ab0828",
+    customer: "61531a4f1c38473378ab0828",
     invoice: 10000,
     cart: [
       { product: "6127965254781e22f8ae5930", quantity: 1, price: 9 },
       { product: "6127965254781e22f8ae5931", quantity: 2, price: 15 },
     ],
-    user_info: {
+    customer_info: {
       name: "Priyanka de Silva",
       email: "priyanka@example.com",
       contact: "+94771234567",
@@ -26,14 +26,14 @@ const orders = [
     status: "Pending",
   },
   {
-    user: "61531a4f1c38473378ab0828",
+    customer: "61531a4f1c38473378ab0828",
     invoice: 10001,
     cart: [
       { product: "6127965254781e22f8ae5930", quantity: 1, price: 9 },
       { product: "6127965254781e22f8ae5932", quantity: 3, price: 20 },
       { product: "6127965254781e22f8ae5933", quantity: 1, price: 25 },
     ],
-    user_info: {
+    customer_info: {
       name: "Nuwan Perera",
       email: "nuwan@example.com",
       contact: "+94719876543",
@@ -50,13 +50,13 @@ const orders = [
     status: "Processing",
   },
   {
-    user: "61531a4f1c38473378ab0829",
+    customer: "61531a4f1c38473378ab0829",
     invoice: 10002,
     cart: [
       { product: "6127965254781e22f8ae5931", quantity: 2, price: 15 },
       { product: "6127965254781e22f8ae5934", quantity: 1, price: 30 },
     ],
-    user_info: {
+    customer_info: {
       name: "Saman Kumara",
       email: "saman@example.com",
       contact: "+94753456789",
@@ -76,13 +76,13 @@ const orders = [
     status: "Processing",
   },
   {
-    user: "61531a4f1c38473378ab0830",
+    customer: "61531a4f1c38473378ab0830",
     invoice: 10003,
     cart: [
       { product: "6127965254781e22f8ae5932", quantity: 3, price: 20 },
       { product: "6127965254781e22f8ae5935", quantity: 2, price: 12 },
     ],
-    user_info: {
+    customer_info: {
       name: "Dhanushka Silva",
       email: "dhanushka@example.com",
       contact: "+94722345678",
@@ -99,14 +99,14 @@ const orders = [
     status: "Delivered",
   },
   {
-    user: "61531a4f1c38473378ab0831",
+    customer: "61531a4f1c38473378ab0831",
     invoice: 10004,
     cart: [
       { product: "6127965254781e22f8ae5933", quantity: 1, price: 25 },
       { product: "6127965254781e22f8ae5934", quantity: 1, price: 30 },
       { product: "6127965254781e22f8ae5936", quantity: 1, price: 18 },
     ],
-    user_info: {
+    customer_info: {
       name: "Nimali Fernando",
       email: "nimali@example.com",
       contact: "+94774567890",
@@ -126,13 +126,13 @@ const orders = [
     status: "Cancelled",
   },
   {
-    user: "61531a4f1c38473378ab0832",
+    customer: "61531a4f1c38473378ab0832",
     invoice: 10005,
     cart: [
       { product: "6127965254781e22f8ae5935", quantity: 2, price: 12 },
       { product: "6127965254781e22f8ae5937", quantity: 4, price: 8 },
     ],
-    user_info: {
+    customer_info: {
       name: "Chaminda Rajapakse",
       email: "chaminda@example.com",
       contact: "+94715678901",
@@ -149,13 +149,13 @@ const orders = [
     status: "Pending",
   },
   {
-    user: "61531a4f1c38473378ab0833",
+    customer: "61531a4f1c38473378ab0833",
     invoice: 10006,
     cart: [
       { product: "6127965254781e22f8ae5936", quantity: 1, price: 18 },
       { product: "6127965254781e22f8ae5938", quantity: 1, price: 40 },
     ],
-    user_info: {
+    customer_info: {
       name: "Sanduni Perera",
       email: "sanduni@example.com",
       contact: "+94701234567",
@@ -175,13 +175,13 @@ const orders = [
     status: "Processing",
   },
   {
-    user: "61531a4f1c38473378ab0834",
+    customer: "61531a4f1c38473378ab0834",
     invoice: 10007,
     cart: [
       { product: "6127965254781e22f8ae5937", quantity: 4, price: 8 },
       { product: "6127965254781e22f8ae5939", quantity: 2, price: 14 },
     ],
-    user_info: {
+    customer_info: {
       name: "Lakshan Silva",
       email: "lakshan@example.com",
       contact: "+94769876543",
@@ -198,13 +198,13 @@ const orders = [
     status: "Processing",
   },
   {
-    user: "61531a4f1c38473378ab0835",
+    customer: "61531a4f1c38473378ab0835",
     invoice: 10008,
     cart: [
       { product: "6127965254781e22f8ae5938", quantity: 1, price: 40 },
       { product: "6127965254781e22f8ae5930", quantity: 1, price: 9 },
     ],
-    user_info: {
+    customer_info: {
       name: "Amali Wickramasinghe",
       email: "amali@example.com",
       contact: "+94783456789",
@@ -224,13 +224,13 @@ const orders = [
     status: "Delivered",
   },
   {
-    user: "61531a4f1c38473378ab0836",
+    customer: "61531a4f1c38473378ab0836",
     invoice: 10009,
     cart: [
       { product: "6127965254781e22f8ae5939", quantity: 2, price: 14 },
       { product: "6127965254781e22f8ae5931", quantity: 2, price: 15 },
     ],
-    user_info: {
+    customer_info: {
       name: "Thusitha Fernando",
       email: "thusitha@example.com",
       contact: "+94754567890",

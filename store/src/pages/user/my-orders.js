@@ -24,9 +24,10 @@ const MyOrders = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    OrderServices.getOrderByUser({
+    OrderServices.getOrderByCustomer({
       page: currentPage,
       limit: 8,
+      customer: userInfo._id,
     })
       .then((res) => {
         setData(res);

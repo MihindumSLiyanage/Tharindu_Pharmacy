@@ -21,16 +21,19 @@ const Dashboard = ({ title, description, children }) => {
     state: { userInfo },
   } = useContext(UserContext);
 
-  const { isLoading, setIsLoading, currentPage } = useContext(SidebarContext);
+  const { setIsLoading, currentPage } = useContext(SidebarContext);
 
   const [data, setData] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    OrderServices.getOrderByUser({
+    if (!userInfo) return;
+
+    OrderServices.getOrderByCustomer({
       page: currentPage,
       limit: 8,
+      customer: userInfo._id,
     })
       .then((res) => {
         setData(res);
@@ -40,7 +43,7 @@ const Dashboard = ({ title, description, children }) => {
         setLoading(false);
         setError(err.message);
       });
-  }, [currentPage]);
+  }, [currentPage, userInfo]);
 
   const handleLogOut = () => {
     dispatch({ type: "USER_LOGOUT" });

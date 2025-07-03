@@ -7,7 +7,7 @@ import Label from "@component/form/Label";
 import Error from "@component/form/Error";
 import Dashboard from "@pages/user/dashboard";
 import InputArea from "@component/form/InputArea";
-import UserServices from "@services/UserServices";
+import CustomerServices from "@services/CustomerServices";
 import { UserContext } from "@context/UserContext";
 import Uploader from "@component/image-uploader/Uploader";
 import { notifySuccess, notifyError } from "@utils/toast";
@@ -37,7 +37,7 @@ const UpdateProfile = () => {
       image: imageUrls[0],
     };
 
-    UserServices.updateUser(userInfo._id, userData)
+    CustomerServices.updateUser(userInfo._id, userData)
       .then((res) => {
         if (res) {
           setLoading(false);

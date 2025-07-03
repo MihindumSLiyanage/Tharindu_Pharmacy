@@ -7,11 +7,11 @@ import { ToastContainer } from "react-toastify";
 
 import Error from "@component/form/Error";
 import InputArea from "@component/form/InputArea";
-import UserServices from "@services/UserServices";
+import CustomerServices from "@services/CustomerServices";
 import { UserContext } from "@context/UserContext";
 import { notifyError, notifySuccess } from "@utils/toast";
 
-const ForgetPassword = () => {
+const ForgotPassword = () => {
   const [loading, setLoading] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
   const { dispatch } = useContext(UserContext);
@@ -30,7 +30,7 @@ const ForgetPassword = () => {
   const submitHandler = ({ registerEmail, password, newPassword }) => {
     setLoading(true);
     if (newPassword) {
-      UserServices.resetPassword({ newPassword, token: router.query?.token })
+      CustomerServices.resetPassword({ newPassword, token: router.query?.token })
         .then((res) => {
           setLoading(false);
           setShowLogin(true);
@@ -44,7 +44,7 @@ const ForgetPassword = () => {
     }
 
     if (registerEmail && password) {
-      UserServices.userLogin({
+      CustomerServices.customerLogin({
         registerEmail,
         password,
       })
@@ -164,4 +164,4 @@ const ForgetPassword = () => {
   );
 };
 
-export default ForgetPassword;
+export default ForgotPassword;

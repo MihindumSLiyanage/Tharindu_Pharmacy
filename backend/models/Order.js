@@ -3,9 +3,9 @@ const AutoIncrement = require("mongoose-sequence")(mongoose);
 
 const orderSchema = new mongoose.Schema(
   {
-    user: {
+    customer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      ref: "Customer",
       required: true,
     },
     invoice: {
@@ -13,7 +13,7 @@ const orderSchema = new mongoose.Schema(
       required: false,
     },
     cart: [{}],
-    user_info: {
+    customer_info: {
       name: String,
       email: String,
       contact: String,

@@ -9,15 +9,17 @@ const OrderServices = {
     return requests.post("/order/create-payment-intent", body);
   },
 
-  getOrderByUser: async ({ page = 1, limit = 8 }) => {
-    return requests.get(`/order?limit=${limit}&page=${page}`);
+  getOrderByCustomer: async ({ page = 1, limit = 8, customer }) => {
+    return requests.get(
+      `/order?limit=${limit}&page=${page}&customer=${customer}`
+    );
   },
 
   getOrderById: async (id) => {
     return requests.get(`/order/${id}`);
   },
 
-  getPrescriptionsByUser: async () => {
+  getPrescriptionsByCustomer: async () => {
     return requests.get("/order/prescriptions");
   },
 };

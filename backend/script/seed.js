@@ -1,8 +1,8 @@
 require("dotenv").config();
 const connectDataBase = require("../config/db");
 
-const User = require("../models/User");
-const userData = require("../utils/user");
+const Customer = require("../models/Customer");
+const customerData = require("../utils/customers");
 const Admin = require("../models/Admin");
 const adminData = require("../utils/admin");
 const Language = require("../models/Language");
@@ -22,8 +22,8 @@ connectDataBase();
 
 const importData = async () => {
   try {
-    await User.deleteMany();
-    await User.insertMany(userData);
+    await Customer.deleteMany();
+    await Customer.insertMany(customerData);
 
     await Admin.deleteMany();
     await Admin.insertMany(adminData);

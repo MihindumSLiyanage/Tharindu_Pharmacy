@@ -106,7 +106,7 @@ const useCheckoutSubmit = () => {
 
     const orderData = {
       cart: items,
-      user_info: {
+      customer_info: {
         name: `${data.firstName} ${data.lastName}`,
         contact: data.contact,
         email: data.email,
@@ -121,7 +121,7 @@ const useCheckoutSubmit = () => {
       paymentMethod: data.paymentMethod,
       prescriptions: imageUrls,
       status: "Pending",
-      user: userInfo?._id,
+      customer: userInfo?._id,
       coupon: coupon?._id,
     };
 

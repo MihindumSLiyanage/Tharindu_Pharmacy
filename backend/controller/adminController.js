@@ -24,8 +24,6 @@ const registerAdmin = async (req, res) => {
       phone: req.body.phone,
       image: req.body.image,
       address: req.body.address,
-      specialization: req.body.specialization,
-      licenseNumber: req.body.licenseNumber,
     });
     const staff = await newStaff.save();
     const token = signInToken(staff);
@@ -109,7 +107,7 @@ const resetPassword = async (req, res) => {
   }
 };
 
-// Add Staff (Admin/Pharmacist/Doctor)
+// Add Staff (Admin/Pharmacist)
 const addStaff = async (req, res) => {
   try {
     const isAdded = await Admin.findOne({ email: req.body.email });
@@ -125,8 +123,6 @@ const addStaff = async (req, res) => {
       role: req.body.role,
       image: req.body.image,
       address: req.body.address,
-      specialization: req.body.specialization,
-      licenseNumber: req.body.licenseNumber,
     });
     await newStaff.save();
     res.status(201).send({ message: "Staff Added Successfully!" });
@@ -138,7 +134,7 @@ const addStaff = async (req, res) => {
 // Get All Staff
 const getAllStaff = async (req, res) => {
   try {
-    const admins = await Admin.find({}).sort({ _id: -1 });
+    const admins = await Admin.find({}).select("-password");
     res.send(admins);
   } catch (err) {
     res.status(500).send({ message: err.message });
@@ -148,7 +144,7 @@ const getAllStaff = async (req, res) => {
 // Get Staff By ID
 const getStaffById = async (req, res) => {
   try {
-    const admin = await Admin.findById(req.params.id);
+    const admin = await Admin.findById(req.params.id).select("-password");
     if (!admin) {
       return res.status(404).send({ message: "Staff not found" });
     }
@@ -161,7 +157,7 @@ const getStaffById = async (req, res) => {
 // Update Staff Details
 const updateStaff = async (req, res) => {
   try {
-    const admin = await Admin.findById(req.params.id);
+    const admin = await Admin.findById(req.params.id).select("-password");
     if (!admin) {
       return res.status(404).send({ message: "Staff not found" });
     }
@@ -177,8 +173,6 @@ const updateStaff = async (req, res) => {
       : admin.password;
     admin.image = req.body.image || admin.image;
     admin.address = req.body.address || admin.address;
-    admin.specialization = req.body.specialization || admin.specialization;
-    admin.licenseNumber = req.body.licenseNumber || admin.licenseNumber;
 
     const updatedAdmin = await admin.save();
     const token = signInToken(updatedAdmin);

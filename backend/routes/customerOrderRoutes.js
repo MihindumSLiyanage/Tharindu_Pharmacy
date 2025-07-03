@@ -3,10 +3,10 @@ const router = express.Router();
 const {
   addOrder,
   getOrderById,
-  getOrderByUser,
+  getOrderByCustomer,
   createPaymentIntent,
-  getUserPrescriptions,
-} = require("../controller/userOrderController");
+  getCustomerPrescriptions,
+} = require("../controller/customerOrderController");
 
 // Add an order
 router.post("/add", addOrder);
@@ -14,13 +14,13 @@ router.post("/add", addOrder);
 // create stripe payment intent
 router.post("/create-payment-intent", createPaymentIntent);
 
-// Get all prescriptions for the logged-in user
-router.get("/prescriptions", getUserPrescriptions);
+// Get all prescriptions for the logged-in Customer
+router.get("/prescriptions", getCustomerPrescriptions);
 
 // Get a specific order by ID
 router.get("/:id", getOrderById);
 
-// Get all orders for the logged-in user
-router.get("/", getOrderByUser);
+// Get all orders for the logged-in Customer
+router.get("/", getOrderByCustomer);
 
 module.exports = router;

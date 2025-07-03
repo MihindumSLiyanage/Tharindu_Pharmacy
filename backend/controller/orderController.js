@@ -1,343 +1,212 @@
 const Order = require("../models/Order");
 
 const getAllOrders = async (req, res) => {
-  const { customerName, status, page, limit, day, startDate, endDate } =
-    req.query;
-
-  let date = new Date();
-  const today = date.toString();
-  date.setDate(date.getDate() - Number(day));
-  const dateTime = date.toString();
-
-  const beforeToday = new Date();
-  beforeToday.setDate(beforeToday.getDate() - 1);
-  const before_today = beforeToday.toString();
-
-  const startDateData = new Date(startDate);
-  startDateData.setDate(startDateData.getDate());
-  const start_date = startDateData.toString();
+  const {
+    customerName,
+    status,
+    page = 1,
+    limit = 8,
+    day,
+    startDate,
+    endDate,
+  } = req.query;
 
   const queryObject = {};
 
-  if (!status) {
-    queryObject.$or = [
-      { status: { $regex: `Pending`, $options: "i" } },
-      { status: { $regex: `Processing`, $options: "i" } },
-      { status: { $regex: `Delivered`, $options: "i" } },
-      { status: { $regex: `Cancel`, $options: "i" } },
-    ];
+  if (status) {
+    queryObject.status = { $regex: status, $options: "i" };
   }
 
   if (customerName) {
     queryObject.$or = [
-      { "user_info.name": { $regex: `${customerName}`, $options: "i" } },
-      { invoice: { $regex: `${customerName}`, $options: "i" } },
+      { "customer_info.name": { $regex: customerName, $options: "i" } },
     ];
+    if (!isNaN(customerName)) {
+      queryObject.$or.push({ invoice: Number(customerName) });
+    }
   }
 
   if (day) {
-    queryObject.createdAt = { $gte: dateTime, $lte: today };
-  }
-
-  if (status) {
-    queryObject.status = { $regex: `${status}`, $options: "i" };
+    const today = new Date();
+    const fromDate = new Date();
+    fromDate.setDate(today.getDate() - Number(day));
+    queryObject.createdAt = { $gte: fromDate, $lte: today };
   }
 
   if (startDate && endDate) {
     queryObject.updatedAt = {
-      $gt: start_date,
-      $lt: before_today,
+      $gte: new Date(startDate),
+      $lte: new Date(endDate),
     };
   }
 
-  const pages = Number(page) || 1;
-  const limits = Number(limit);
-  const skip = (pages - 1) * limits;
+  const skip = (Number(page) - 1) * Number(limit);
 
   try {
-    // total orders count
     const totalDoc = await Order.countDocuments(queryObject);
     const orders = await Order.find(queryObject)
       .select(
-        "_id invoice paymentMethod subTotal total user_info discount shippingCost status createdAt updatedAt"
+        "invoice paymentMethod subTotal total customer_info discount shippingCost status createdAt updatedAt prescriptions"
       )
       .sort({ updatedAt: -1 })
       .skip(skip)
-      .limit(limits);
+      .limit(Number(limit))
+      .lean();
 
-    res.send({
-      orders,
-      limits,
-      pages,
-      totalDoc,
-      // orderOverview,
-    });
+    res.json({ orders, limits: Number(limit), pages: Number(page), totalDoc });
   } catch (err) {
-    res.status(500).send({
-      message: err.message,
-    });
+    res.status(500).json({ message: err.message });
   }
 };
 
 const getOrderCustomer = async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.params.id }).sort({ _id: -1 });
+    const orders = await Order.find({ customer: req.params.id })
+      .sort({ _id: -1 })
+      .lean();
     res.send(orders);
   } catch (err) {
-    res.status(500).send({
-      message: err.message,
-    });
+    res.status(500).send({ message: err.message });
   }
 };
 
 const getOrderById = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id);
+    const order = await Order.findById(req.params.id)
+      .populate("cart.product")
+      .lean();
+    if (!order) {
+      return res.status(404).send({ message: "Order not found" });
+    }
     res.send(order);
   } catch (err) {
-    res.status(500).send({
-      message: err.message,
-    });
+    res.status(500).send({ message: err.message });
   }
 };
 
-const updateOrder = (req, res) => {
-  const newStatus = req.body.status;
-  Order.updateOne(
-    {
-      _id: req.params.id,
-    },
-    {
-      $set: {
-        status: newStatus,
-      },
-    },
-    (err) => {
-      if (err) {
-        res.status(500).send({
-          message: err.message,
-        });
-      } else {
-        res.status(200).send({
-          message: "Order Updated Successfully!",
-        });
-      }
-    }
-  );
+const updateOrder = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    await Order.updateOne({ _id: id }, { $set: { status } });
+    res.status(200).json({ message: "Order Updated Successfully!" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
-const deleteOrder = (req, res) => {
-  Order.deleteOne({ _id: req.params.id }, (err) => {
-    if (err) {
-      res.status(500).send({
-        message: err.message,
-      });
-    } else {
-      res.status(200).send({
-        message: "Order Deleted Successfully!",
-      });
-    }
-  });
+const deleteOrder = async (req, res) => {
+  try {
+    await Order.deleteOne({ _id: req.params.id });
+    res.status(200).json({ message: "Order Deleted Successfully!" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
 };
 
-// get dashboard recent order
 const getDashboardRecentOrder = async (req, res) => {
   try {
-    const { page, limit } = req.query;
+    const { page = 1, limit = 8 } = req.query;
+    const skip = (page - 1) * limit;
 
-    const pages = Number(page) || 1;
-    const limits = Number(limit) || 8;
-    const skip = (pages - 1) * limits;
-
-    const queryObject = {};
-
-    queryObject.$or = [
-      { status: { $regex: `Pending`, $options: "i" } },
-      { status: { $regex: `Processing`, $options: "i" } },
-      { status: { $regex: `Delivered`, $options: "i" } },
-      { status: { $regex: `Cancel`, $options: "i" } },
-    ];
+    const queryObject = {
+      status: { $in: ["Pending", "Processing", "Delivered", "Cancel"] },
+    };
 
     const totalDoc = await Order.countDocuments(queryObject);
-
-    // query for orders
     const orders = await Order.find(queryObject)
       .sort({ updatedAt: -1 })
       .skip(skip)
-      .limit(limits);
+      .limit(Number(limit))
+      .lean();
 
-    // console.log('order------------<', orders);
-
-    res.send({
-      orders: orders,
-      page: page,
-      limit: limit,
-      totalOrder: totalDoc,
-    });
+    res.send({ orders, page, limit, totalOrder: totalDoc });
   } catch (err) {
-    res.status(500).send({
-      message: err.message,
-    });
+    res.status(500).send({ message: err.message });
   }
 };
 
-// get dashboard count
 const getDashboardCount = async (req, res) => {
   try {
     const totalDoc = await Order.countDocuments();
 
-    // total padding order count
-    const totalPendingOrder = await Order.aggregate([
-      {
-        $match: {
-          status: "Pending",
+    const [pending, processing, delivered] = await Promise.all([
+      Order.aggregate([
+        { $match: { status: "Pending" } },
+        {
+          $group: { _id: null, total: { $sum: "$total" }, count: { $sum: 1 } },
         },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$total" },
-          count: {
-            $sum: 1,
-          },
-        },
-      },
-    ]);
-
-    // total processing order count
-    const totalProcessingOrder = await Order.aggregate([
-      {
-        $match: {
-          status: "Processing",
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          count: {
-            $sum: 1,
-          },
-        },
-      },
-    ]);
-
-    // total delivered order count
-    const totalDeliveredOrder = await Order.aggregate([
-      {
-        $match: {
-          status: "Delivered",
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          count: {
-            $sum: 1,
-          },
-        },
-      },
+      ]),
+      Order.aggregate([
+        { $match: { status: "Processing" } },
+        { $group: { _id: null, count: { $sum: 1 } } },
+      ]),
+      Order.aggregate([
+        { $match: { status: "Delivered" } },
+        { $group: { _id: null, count: { $sum: 1 } } },
+      ]),
     ]);
 
     res.send({
       totalOrder: totalDoc,
-      totalPendingOrder: totalPendingOrder[0] || 0,
-      totalProcessingOrder: totalProcessingOrder[0]?.count || 0,
-      totalDeliveredOrder: totalDeliveredOrder[0]?.count || 0,
+      totalPendingOrder: pending[0] || 0,
+      totalProcessingOrder: processing[0]?.count || 0,
+      totalDeliveredOrder: delivered[0]?.count || 0,
     });
   } catch (err) {
-    res.status(500).send({
-      message: err.message,
-    });
+    res.status(500).send({ message: err.message });
   }
 };
 
 const getDashboardAmount = async (req, res) => {
-  // console.log('total')
   let week = new Date();
   week.setDate(week.getDate() - 10);
+
   try {
-    // total order amount
-    const totalAmount = await Order.aggregate([
-      {
-        $group: {
-          _id: null,
-          tAmount: {
-            $sum: "$total",
+    const [totalAmountAgg, monthlyAgg, recentOrders] = await Promise.all([
+      Order.aggregate([{ $group: { _id: null, tAmount: { $sum: "$total" } } }]),
+      Order.aggregate([
+        {
+          $match: {
+            status: { $regex: "Delivered", $options: "i" },
+            $expr: { $eq: [{ $month: "$updatedAt" }, { $month: new Date() }] },
           },
         },
-      },
+        {
+          $group: {
+            _id: { month: { $month: "$updatedAt" } },
+            total: { $sum: "$total" },
+          },
+        },
+        { $sort: { _id: -1 } },
+        { $limit: 1 },
+      ]),
+      Order.find(
+        {
+          status: { $regex: "Delivered", $options: "i" },
+          updatedAt: { $gte: week },
+        },
+        {
+          paymentMethod: 1,
+          paymentDetails: 1,
+          total: 1,
+          createdAt: 1,
+          updatedAt: 1,
+        }
+      ).lean(),
     ]);
-    // console.log('totalAmount',totalAmount)
-    const thisMonthlyOrderAmount = await Order.aggregate([
-      {
-        $match: {
-          $or: [{ status: { $regex: "Delivered", $options: "i" } }],
-          $expr: {
-            $eq: [{ $month: "$updatedAt" }, { $month: new Date() }],
-          },
-        },
-      },
-      {
-        $group: {
-          _id: {
-            month: {
-              $month: "$updatedAt",
-            },
-          },
-          total: {
-            $sum: "$total",
-          },
-        },
-      },
-      {
-        $sort: { _id: -1 },
-      },
-      {
-        $limit: 1,
-      },
-    ]);
-
-    // console.log("thisMonthlyOrderAmount ===>", thisMonthlyOrderAmount);
-
-    // order list last 10 days
-    const orderFilteringData = await Order.find(
-      {
-        $or: [{ status: { $regex: `Delivered`, $options: "i" } }],
-        updatedAt: {
-          $gte: week,
-        },
-      },
-
-      {
-        paymentMethod: 1,
-        paymentDetails: 1,
-        total: 1,
-        createdAt: 1,
-        updatedAt: 1,
-      }
-    );
-    // let data = [];
-    // orderFilteringData.map((value) => {
-    //   return data.push(value._id);
-    // });
 
     res.send({
-      totalAmount:
-        totalAmount.length === 0
-          ? 0
-          : parseFloat(totalAmount[0].tAmount).toFixed(2),
-      thisMonthlyOrderAmount: thisMonthlyOrderAmount[0]?.total,
-      ordersData: orderFilteringData,
+      totalAmount: totalAmountAgg[0]?.tAmount?.toFixed(2) || "0.00",
+      thisMonthlyOrderAmount: monthlyAgg[0]?.total || 0,
+      ordersData: recentOrders,
     });
   } catch (err) {
-    // console.log('err',err)
-    res.status(500).send({
-      message: err.message,
-    });
+    res.status(500).send({ message: err.message });
   }
 };
 
-const bestSellerProductChart = async (req, res) => {
+const getBestSellerProductChart = async (req, res) => {
   try {
     const totalDoc = await Order.countDocuments({});
     const bestSellingProduct = await Order.aggregate([
@@ -346,7 +215,7 @@ const bestSellerProductChart = async (req, res) => {
       },
       {
         $group: {
-          _id: "$cart.title",
+          _id: "$cart.name",
 
           count: {
             $sum: "$cart.quantity",
@@ -375,156 +244,74 @@ const bestSellerProductChart = async (req, res) => {
 };
 
 const getDashboardOrders = async (req, res) => {
-  const { page, limit } = req.query;
-
-  const pages = Number(page) || 1;
-  const limits = Number(limit) || 8;
-  const skip = (pages - 1) * limits;
-
-  let week = new Date();
+  const { page = 1, limit = 8 } = req.query;
+  const skip = (page - 1) * limit;
+  const week = new Date();
   week.setDate(week.getDate() - 10);
-
-  const start = new Date().toDateString();
-
-  // (startDate = '12:00'),
-  //   (endDate = '23:59'),
-  // console.log("page, limit", page, limit);
+  const today = new Date();
 
   try {
-    const totalDoc = await Order.countDocuments({});
-
-    // query for orders
-    const orders = await Order.find({})
-      .sort({ _id: -1 })
-      .skip(skip)
-      .limit(limits);
-
-    const totalAmount = await Order.aggregate([
-      {
-        $group: {
-          _id: null,
-          tAmount: {
-            $sum: "$total",
-          },
-        },
-      },
-    ]);
-
-    // total order amount
-    const todayOrder = await Order.find({ createdAt: { $gte: start } });
-
-    // this month order amount
-    const totalAmountOfThisMonth = await Order.aggregate([
-      {
-        $group: {
-          _id: {
-            year: {
-              $year: "$createdAt",
+    const [
+      totalDoc,
+      orders,
+      totalAmountAgg,
+      todayOrders,
+      monthTotalAgg,
+      pending,
+      processing,
+      delivered,
+      weeklyReport,
+    ] = await Promise.all([
+      Order.countDocuments(),
+      Order.find({}).sort({ _id: -1 }).skip(skip).limit(Number(limit)).lean(),
+      Order.aggregate([{ $group: { _id: null, tAmount: { $sum: "$total" } } }]),
+      Order.find({ createdAt: { $gte: today.toDateString() } }).lean(),
+      Order.aggregate([
+        {
+          $group: {
+            _id: {
+              year: { $year: "$createdAt" },
+              month: { $month: "$createdAt" },
             },
-            month: {
-              $month: "$createdAt",
-            },
-          },
-          total: {
-            $sum: "$total",
+            total: { $sum: "$total" },
           },
         },
-      },
-      {
-        $sort: { _id: -1 },
-      },
-      {
-        $limit: 1,
-      },
+        { $sort: { _id: -1 } },
+        { $limit: 1 },
+      ]),
+      Order.aggregate([
+        { $match: { status: "Pending" } },
+        {
+          $group: { _id: null, total: { $sum: "$total" }, count: { $sum: 1 } },
+        },
+      ]),
+      Order.aggregate([
+        { $match: { status: "Processing" } },
+        { $group: { _id: null, count: { $sum: 1 } } },
+      ]),
+      Order.aggregate([
+        { $match: { status: "Delivered" } },
+        { $group: { _id: null, count: { $sum: 1 } } },
+      ]),
+      Order.find({
+        status: { $regex: "Delivered", $options: "i" },
+        createdAt: { $gte: week },
+      }).lean(),
     ]);
-
-    // total padding order count
-    const totalPendingOrder = await Order.aggregate([
-      {
-        $match: {
-          status: "Pending",
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$total" },
-          count: {
-            $sum: 1,
-          },
-        },
-      },
-    ]);
-
-    // total delivered order count
-    const totalProcessingOrder = await Order.aggregate([
-      {
-        $match: {
-          status: "Processing",
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$total" },
-          count: {
-            $sum: 1,
-          },
-        },
-      },
-    ]);
-
-    // total delivered order count
-    const totalDeliveredOrder = await Order.aggregate([
-      {
-        $match: {
-          status: "Delivered",
-        },
-      },
-      {
-        $group: {
-          _id: null,
-          total: { $sum: "$total" },
-          count: {
-            $sum: 1,
-          },
-        },
-      },
-    ]);
-
-    //weekly sale report
-    // filter order data
-    const weeklySaleReport = await Order.find({
-      $or: [{ status: { $regex: `Delivered`, $options: "i" } }],
-      createdAt: {
-        $gte: week,
-      },
-    });
 
     res.send({
       totalOrder: totalDoc,
-      totalAmount:
-        totalAmount.length === 0
-          ? 0
-          : parseFloat(totalAmount[0].tAmount).toFixed(2),
-      todayOrder: todayOrder,
-      totalAmountOfThisMonth:
-        totalAmountOfThisMonth.length === 0
-          ? 0
-          : parseFloat(totalAmountOfThisMonth[0].total).toFixed(2),
-      totalPendingOrder:
-        totalPendingOrder.length === 0 ? 0 : totalPendingOrder[0],
-      totalProcessingOrder:
-        totalProcessingOrder.length === 0 ? 0 : totalProcessingOrder[0].count,
-      totalDeliveredOrder:
-        totalDeliveredOrder.length === 0 ? 0 : totalDeliveredOrder[0].count,
+      totalAmount: totalAmountAgg[0]?.tAmount?.toFixed(2) || "0.00",
+      todayOrder: todayOrders,
+      totalAmountOfThisMonth: monthTotalAgg[0]?.total?.toFixed(2) || "0.00",
+      totalPendingOrder: pending[0] || 0,
+      totalProcessingOrder: processing[0]?.count || 0,
+      totalDeliveredOrder: delivered[0]?.count || 0,
       orders,
-      weeklySaleReport,
+      weeklySaleReport: weeklyReport,
     });
   } catch (err) {
-    res.status(500).send({
-      message: err.message,
-    });
+    res.status(500).send({ message: err.message });
   }
 };
 
@@ -534,7 +321,7 @@ module.exports = {
   getOrderCustomer,
   updateOrder,
   deleteOrder,
-  bestSellerProductChart,
+  getBestSellerProductChart,
   getDashboardOrders,
   getDashboardRecentOrder,
   getDashboardCount,

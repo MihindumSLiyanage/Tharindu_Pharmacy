@@ -5,7 +5,7 @@ import Cookies from "js-cookie";
 import Error from "@component/form/Error";
 import Dashboard from "@pages/user/dashboard";
 import InputArea from "@component/form/InputArea";
-import UserServices from "@services/UserServices";
+import CustomerServices from "@services/CustomerServices";
 import { notifyError, notifySuccess } from "@utils/toast";
 
 const ChangePassword = () => {
@@ -20,7 +20,7 @@ const ChangePassword = () => {
 
   const onSubmit = ({ email, currentPassword, newPassword }) => {
     setLoading(true);
-    UserServices.changePassword({ email, currentPassword, newPassword })
+    CustomerServices.changePassword({ email, currentPassword, newPassword })
       .then((res) => {
         notifySuccess(res.message);
         setLoading(true);
