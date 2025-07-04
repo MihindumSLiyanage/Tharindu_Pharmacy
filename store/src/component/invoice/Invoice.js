@@ -16,9 +16,6 @@ const Invoice = ({ data, printRef }) => {
             {data.status === "Delivered" && (
               <span className="text-emerald-500">{data.status}</span>
             )}
-            {data.status === "POS-Completed" && (
-              <span className="text-emerald-500">{data.status}</span>
-            )}
             {data.status === "Pending" && (
               <span className="text-orange-500">{data.status}</span>
             )}

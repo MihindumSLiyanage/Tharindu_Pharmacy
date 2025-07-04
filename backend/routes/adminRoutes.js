@@ -10,6 +10,7 @@ const {
   getStaffById,
   updateStaff,
   deleteStaff,
+  approveOrRejectOrder,
 } = require("../controller/adminController");
 
 //register a staff
@@ -38,5 +39,7 @@ router.put("/:id", updateStaff);
 
 //delete a staff
 router.delete("/:id", deleteStaff);
+
+router.put("/order/:id/review", approveOrRejectOrder);
 
 module.exports = router;

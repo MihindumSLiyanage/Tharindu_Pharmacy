@@ -30,7 +30,36 @@ const generateEmailVerificationEmail = (email, token) => {
   };
 };
 
+const generateOrderReviewResultEmail = (order, status, reason) => {
+  const isRejected = status === "Rejected";
+
+  return {
+    from: process.env.EMAIL_USER,
+    to: order.customer_info.email,
+    subject: `Order #${order.invoice} ${status}`,
+    html: `
+      <h2>Hello ${order.customer_info.name}</h2>
+      <p>Your order with <strong>Tharindu Pharmacy</strong> has been <strong style="color: ${
+        isRejected ? "#dc2626" : "#22c55e"
+      };">${status}</strong>.</p>
+      ${
+        isRejected
+          ? `<p><strong>Rejection Reason:</strong> ${
+              reason || "Not specified."
+            }</p>`
+          : `<p>We are currently processing your order. You’ll receive another email once it’s on the way.</p>`
+      }
+      <p><strong>Invoice No:</strong> ${order.invoice}</p>
+
+      <p style="margin-top: 35px;">If you have any questions, please contact us at <a href="mailto:tharindupharmacy71@gmail.com">tharindupharmacy71@gmail.com</a></p>
+      <p style="margin-bottom:0px;">Thank you</p>
+      <strong>Tharindu Pharmacy Team</strong>
+    `,
+  };
+};
+
 module.exports = {
   generatePasswordResetEmail,
   generateEmailVerificationEmail,
+  generateOrderReviewResultEmail,
 };

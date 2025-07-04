@@ -7,6 +7,8 @@ const { signInToken, tokenForVerify } = require("../config/auth");
 const { sendEmail } = require("../config/email");
 const { generatePasswordResetEmail } = require("../config/emailTemplates");
 const Admin = require("../models/Admin");
+const Order = require("../models/Order");
+const { generateOrderReviewResultEmail } = require("../config/emailTemplates");
 
 // Register Admin (Staff)
 const registerAdmin = async (req, res) => {
@@ -203,6 +205,24 @@ const deleteStaff = async (req, res) => {
   }
 };
 
+const approveOrRejectOrder = async (req, res) => {
+  try {
+    const { status, reason } = req.body;
+    const { id } = req.params;
+
+    if (!["Approved", "Rejected"].includes(status)) {
+      return res.status(400).json({ message: "Invalid status." });
+    }
+
+    const order = await Order.findByIdAndUpdate(id, { status }, { new: true });
+
+    const emailBody = generateOrderReviewResultEmail(order, status, reason);
+    await sendEmail(emailBody, res, `Order ${status} email sent to customer.`);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   registerAdmin,
   loginAdmin,
@@ -213,4 +233,5 @@ module.exports = {
   getStaffById,
   updateStaff,
   deleteStaff,
+  approveOrRejectOrder,
 };
