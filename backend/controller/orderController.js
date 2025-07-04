@@ -183,8 +183,7 @@ const getDashboardAmount = async (req, res) => {
       ]),
       Order.find(
         {
-          status: { $regex: "Delivered", $options: "i" },
-          updatedAt: { $gte: week },
+          createdAt: { $gte: week },
         },
         {
           paymentMethod: 1,
@@ -192,6 +191,7 @@ const getDashboardAmount = async (req, res) => {
           total: 1,
           createdAt: 1,
           updatedAt: 1,
+          status: 1,
         }
       ).lean(),
     ]);
