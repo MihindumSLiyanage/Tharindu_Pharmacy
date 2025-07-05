@@ -4,6 +4,9 @@ const cors = require("cors");
 const helmet = require("helmet");
 const bodyParser = require("body-parser");
 
+// Start daily cron task to check for expiring medicines
+require("../tasks/expiryReminderTask");
+
 // Database Connection
 const connectDataBase = require("../config/db");
 

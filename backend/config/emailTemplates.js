@@ -58,7 +58,31 @@ const generateOrderReviewResultEmail = (order, status, reason) => {
   };
 };
 
+const generateExpiryAlertEmail = (products) => {
+  const productList = products
+    .map(
+      (p) =>
+        `<li><strong>${p.name}</strong> - Expires on: ${new Date(
+          p.expiryDate
+        ).toDateString()}</li>`
+    )
+    .join("");
+
+  return {
+    from: process.env.EMAIL_USER,
+    to: process.env.ADMIN_EMAIL,
+    subject: "Medicines Expiring in One Week",
+    html: `<h2>Upcoming Expirations</h2>
+        <p>The following medicines are set to expire in <strong>7 days</strong>:</p>
+        <ul>${productList}</ul>
+        <p>Please review and take necessary action.</p>
+        <br/>
+        <strong>Tharindu Pharmacy System</strong>`,
+  };
+};
+
 module.exports = {
+  generateExpiryAlertEmail,
   generatePasswordResetEmail,
   generateEmailVerificationEmail,
   generateOrderReviewResultEmail,
