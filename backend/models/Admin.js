@@ -30,7 +30,6 @@ const adminSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: ["admin", "pharmacist"],
-      default: "admin",
     },
     joiningDate: {
       type: Date,

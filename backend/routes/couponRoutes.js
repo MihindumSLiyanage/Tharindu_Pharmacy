@@ -8,9 +8,10 @@ const {
   updateStatus,
   deleteCoupon,
 } = require("../controller/couponController");
+const { isAuth, isAdmin } = require("../config/auth");
 
 //add a coupon
-router.post("/add", addCoupon);
+router.post("/add", isAuth, isAdmin, addCoupon);
 
 //get all coupon
 router.get("/", getAllCoupons);
@@ -19,12 +20,12 @@ router.get("/", getAllCoupons);
 router.get("/:id", getCouponById);
 
 //update a coupon
-router.put("/:id", updateCoupon);
+router.put("/:id", isAuth, isAdmin, updateCoupon);
 
 //show/hide a coupon
-router.put("/status/:id", updateStatus);
+router.put("/status/:id", isAuth, isAdmin, updateStatus);
 
 //delete a coupon
-router.delete("/:id", deleteCoupon);
+router.delete("/:id", isAuth, isAdmin, deleteCoupon);
 
 module.exports = router;

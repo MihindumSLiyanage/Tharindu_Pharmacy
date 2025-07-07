@@ -11,9 +11,10 @@ const {
   deleteProduct,
   getShowingStoreProducts,
 } = require("../controller/productController");
+const { isAuth, isAdmin } = require("../config/auth");
 
 //add a product
-router.post("/add", addProduct);
+router.post("/add", isAuth, isAdmin, addProduct);
 
 //get a product
 router.post("/:id", getProductById);
@@ -31,12 +32,12 @@ router.get("/", getAllProducts);
 router.get("/product/:slug", getProductBySlug);
 
 //update a product
-router.patch("/:id", updateProduct);
+router.patch("/:id", isAuth, isAdmin, updateProduct);
 
 //update a product status
-router.put("/status/:id", updateStatus);
+router.put("/status/:id", isAuth, isAdmin, updateStatus);
 
 //delete a product
-router.delete("/:id", deleteProduct);
+router.delete("/:id", isAuth, isAdmin, deleteProduct);
 
 module.exports = router;

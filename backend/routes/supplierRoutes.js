@@ -8,9 +8,10 @@ const {
   deleteSupplier,
   getSupplierProducts,
 } = require("../controller/supplierController");
+const { isAuth, isAdmin } = require("../config/auth");
 
 // Add a supplier
-router.post("/add", addSupplier);
+router.post("/add", isAuth, isAdmin, addSupplier);
 
 // Get all suppliers
 router.get("/", getAllSuppliers);
@@ -19,10 +20,10 @@ router.get("/", getAllSuppliers);
 router.get("/:id", getSupplierById);
 
 // Update a supplier
-router.put("/:id", updateSupplier);
+router.put("/:id", isAuth, isAdmin, updateSupplier);
 
 // Delete a supplier
-router.delete("/:id", deleteSupplier);
+router.delete("/:id", isAuth, isAdmin, deleteSupplier);
 
 // Get products supplied by a supplier
 router.get("/:id/products", getSupplierProducts);

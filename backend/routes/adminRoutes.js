@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
 const {
-  registerAdmin,
   loginAdmin,
   forgotPassword,
   resetPassword,
@@ -12,9 +11,7 @@ const {
   deleteStaff,
   approveOrRejectOrder,
 } = require("../controller/adminController");
-
-//register a staff
-router.post("/register", registerAdmin);
+const { isAuth, isAdmin } = require("../config/auth");
 
 //login a admin
 router.post("/login", loginAdmin);
@@ -26,7 +23,7 @@ router.put("/forgot-password", forgotPassword);
 router.put("/reset-password", resetPassword);
 
 //add a staff
-router.post("/add", addStaff);
+router.post("/add", isAuth, isAdmin, addStaff);
 
 //get all staff
 router.get("/", getAllStaff);
@@ -35,11 +32,12 @@ router.get("/", getAllStaff);
 router.get("/:id", getStaffById);
 
 //update a staff
-router.put("/:id", updateStaff);
+router.put("/:id", isAuth, isAdmin, updateStaff);
 
 //delete a staff
-router.delete("/:id", deleteStaff);
+router.delete("/:id", isAuth, isAdmin, deleteStaff);
 
+//approve or reject Order
 router.put("/order/:id/review", approveOrRejectOrder);
 
 module.exports = router;

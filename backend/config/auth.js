@@ -10,6 +10,7 @@ const signInToken = (user) => {
       address: user.address,
       phone: user.phone,
       image: user.image,
+      role: user.role,
     },
     process.env.JWT_SECRET,
     {
@@ -45,8 +46,17 @@ const isAuth = async (req, res, next) => {
   }
 };
 
+const isAdmin = async (req, res, next) => {
+  if (req.user && req.user.role === "admin") {
+    next();
+  } else {
+    res.status(403).send({ message: "Access denied: Admin role required" });
+  }
+};
+
 module.exports = {
   signInToken,
   tokenForVerify,
   isAuth,
+  isAdmin,
 };

@@ -13,6 +13,7 @@ const {
   getDashboardAmount,
   getSalesReport,
 } = require("../controller/orderController");
+const { isAuth, isAdmin } = require("../config/auth");
 
 //get all orders
 router.get("/", getAllOrders);
@@ -36,15 +37,15 @@ router.get("/best-seller/chart", getBestSellerProductChart);
 router.get("/customer/:id", getOrderCustomer);
 
 //get sales report
-router.get("/sales-report", getSalesReport);
+router.get("/sales-report", isAuth, isAdmin, getSalesReport);
 
 //get a order by id
 router.get("/:id", getOrderById);
 
 //update a order
-router.put("/:id", updateOrder);
+router.put("/:id", isAuth, isAdmin, updateOrder);
 
 //delete a order
-router.delete("/:id", deleteOrder);
+router.delete("/:id", isAuth, isAdmin, deleteOrder);
 
 module.exports = router;

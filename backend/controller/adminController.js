@@ -5,42 +5,12 @@ dayjs.extend(utc);
 const jwt = require("jsonwebtoken");
 const { signInToken, tokenForVerify } = require("../config/auth");
 const { sendEmail } = require("../config/email");
-const { generatePasswordResetEmail } = require("../config/emailTemplates");
+const {
+  generatePasswordResetEmail,
+  generateOrderReviewResultEmail,
+} = require("../config/emailTemplates");
 const Admin = require("../models/Admin");
 const Order = require("../models/Order");
-const { generateOrderReviewResultEmail } = require("../config/emailTemplates");
-
-// Register Admin (Staff)
-const registerAdmin = async (req, res) => {
-  try {
-    const isAdded = await Admin.findOne({ email: req.body.email });
-    if (isAdded) {
-      return res.status(403).send({ message: "This Email already Added!" });
-    }
-    const newStaff = new Admin({
-      name: req.body.name,
-      email: req.body.email,
-      role: req.body.role,
-      password: bcrypt.hashSync(req.body.password),
-      joiningDate: Date.now(),
-      phone: req.body.phone,
-      image: req.body.image,
-      address: req.body.address,
-    });
-    const staff = await newStaff.save();
-    const token = signInToken(staff);
-    res.send({
-      token,
-      _id: staff._id,
-      name: staff.name,
-      email: staff.email,
-      role: staff.role,
-      joiningDate: staff.joiningDate,
-    });
-  } catch (err) {
-    res.status(500).send({ message: err.message });
-  }
-};
 
 // Admin Login
 const loginAdmin = async (req, res) => {
@@ -68,13 +38,13 @@ const loginAdmin = async (req, res) => {
 // Forgot Password for Admin
 const forgotPassword = async (req, res) => {
   try {
-    const isAdded = await Admin.findOne({ email: req.body.email });
-    if (!isAdded) {
+    const staff = await Admin.findOne({ email: req.body.email });
+    if (!staff) {
       return res
         .status(404)
         .send({ message: "Staff Not found with this email!" });
     }
-    const token = tokenForVerify(isAdded);
+    const token = tokenForVerify(staff);
     const emailBody = generatePasswordResetEmail(req.body.email, token);
     sendEmail(emailBody, res, "Please check your email to reset password!");
   } catch (err) {
@@ -87,22 +57,22 @@ const resetPassword = async (req, res) => {
   const token = req.body.token;
   if (!token) return res.status(400).send({ message: "Token required!" });
 
-  const { email } = jwt.decode(token);
   try {
-    const staff = await Admin.findOne({ email: email });
+    const decoded = jwt.verify(token, process.env.JWT_SECRET_FOR_VERIFY);
+    const staff = await Admin.findOne({ email: decoded.email });
     if (!staff) return res.status(404).send({ message: "Staff not found" });
 
-    jwt.verify(token, process.env.JWT_SECRET_FOR_VERIFY, async (err) => {
-      if (err) {
-        return res
-          .status(400)
-          .send({ message: "Token expired, please try again!" });
-      }
-      staff.password = bcrypt.hashSync(req.body.newPassword);
-      await staff.save();
-      res.send({
-        message: "Your password change successful, you can login now!",
-      });
+    const { newPassword } = req.body;
+    if (!newPassword || newPassword.length < 8) {
+      return res
+        .status(400)
+        .send({ message: "Password must be at least 8 characters long" });
+    }
+
+    staff.password = bcrypt.hashSync(newPassword);
+    await staff.save();
+    res.send({
+      message: "Your password change successful, you can login now!",
     });
   } catch (err) {
     res.status(500).send({ message: err.message });
@@ -112,22 +82,43 @@ const resetPassword = async (req, res) => {
 // Add Staff (Admin/Pharmacist)
 const addStaff = async (req, res) => {
   try {
-    const isAdded = await Admin.findOne({ email: req.body.email });
+    const { name, email, password, role, phone, image, address, joiningDate } =
+      req.body;
+    if (!name || !email || !password || !role) {
+      return res
+        .status(400)
+        .send({ message: "Name, email, password, and role are required" });
+    }
+
+    const isAdded = await Admin.findOne({ email });
     if (isAdded) {
       return res.status(409).send({ message: "This Email already Added!" });
     }
+
     const newStaff = new Admin({
-      name: req.body.name,
-      email: req.body.email,
-      password: bcrypt.hashSync(req.body.password),
-      phone: req.body.phone,
-      joiningDate: req.body.joiningDate,
-      role: req.body.role,
-      image: req.body.image,
-      address: req.body.address,
+      name,
+      email,
+      role,
+      password: bcrypt.hashSync(password),
+      phone,
+      image,
+      address,
+      joiningDate: joiningDate ? dayjs(joiningDate).utc().toDate() : Date.now(),
     });
-    await newStaff.save();
-    res.status(201).send({ message: "Staff Added Successfully!" });
+
+    const staff = await newStaff.save();
+    const token = signInToken(staff);
+    res.status(201).send({
+      token,
+      _id: staff._id,
+      name: staff.name,
+      email: staff.email,
+      role: staff.role,
+      joiningDate: staff.joiningDate,
+      phone: staff.phone,
+      image: staff.image,
+      address: staff.address,
+    });
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
@@ -205,6 +196,7 @@ const deleteStaff = async (req, res) => {
   }
 };
 
+// Approve or Reject Order
 const approveOrRejectOrder = async (req, res) => {
   try {
     const { status, reason } = req.body;
@@ -224,7 +216,6 @@ const approveOrRejectOrder = async (req, res) => {
 };
 
 module.exports = {
-  registerAdmin,
   loginAdmin,
   forgotPassword,
   resetPassword,
