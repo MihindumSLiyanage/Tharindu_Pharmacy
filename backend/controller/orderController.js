@@ -315,6 +315,106 @@ const getDashboardOrders = async (req, res) => {
   }
 };
 
+const getSalesReport = async (req, res) => {
+  const { startDate, endDate } = req.query;
+  const filter = {
+    createdAt: {
+      $gte: new Date(startDate),
+      $lte: new Date(endDate),
+    },
+  };
+
+  try {
+    const [
+      revenue,
+      totalOrders,
+      avgOrderValue,
+      topCustomers,
+      topProducts,
+      salesOverTime,
+      cogs,
+    ] = await Promise.all([
+      Order.aggregate([
+        { $match: filter },
+        { $group: { _id: null, revenue: { $sum: "$total" } } },
+      ]),
+      Order.countDocuments(filter),
+      Order.aggregate([
+        { $match: filter },
+        { $group: { _id: null, avg: { $avg: "$total" } } },
+      ]),
+      Order.aggregate([
+        { $match: filter },
+        {
+          $group: {
+            _id: "$customer_info.name",
+            totalSpent: { $sum: "$total" },
+          },
+        },
+        { $sort: { totalSpent: -1 } },
+        { $limit: 5 },
+      ]),
+      Order.aggregate([
+        { $match: filter },
+        { $unwind: "$cart" },
+        {
+          $group: {
+            _id: "$cart.name",
+            qtySold: { $sum: "$cart.quantity" },
+            totalRevenue: {
+              $sum: { $multiply: ["$cart.quantity", "$cart.price"] },
+            },
+          },
+        },
+        { $sort: { qtySold: -1 } },
+        { $limit: 5 },
+      ]),
+      Order.aggregate([
+        { $match: filter },
+        {
+          $group: {
+            _id: {
+              $dateToString: { format: "%Y-%m-%d", date: "$createdAt" },
+            },
+            total: { $sum: "$total" },
+            count: { $sum: 1 },
+          },
+        },
+        { $sort: { _id: 1 } },
+      ]),
+      Order.aggregate([
+        { $match: filter },
+        { $unwind: "$cart" },
+        {
+          $group: {
+            _id: null,
+            totalCost: {
+              $sum: { $multiply: ["$cart.quantity", "$cart.cost"] },
+            },
+          },
+        },
+      ]),
+    ]);
+
+    const totalRevenue = revenue[0]?.revenue || 0;
+    const totalCost = cogs[0]?.totalCost || 0;
+    const grossProfit = totalRevenue - totalCost;
+
+    res.json({
+      revenue: totalRevenue,
+      totalOrders,
+      avgOrderValue: avgOrderValue[0]?.avg || 0,
+      topCustomers,
+      topProducts,
+      salesOverTime,
+      cogs: totalCost,
+      grossProfit,
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 module.exports = {
   getAllOrders,
   getOrderById,
@@ -326,4 +426,5 @@ module.exports = {
   getDashboardRecentOrder,
   getDashboardCount,
   getDashboardAmount,
+  getSalesReport,
 };

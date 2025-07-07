@@ -17,7 +17,7 @@ const getAllProducts = async (req, res) => {
     const products = await Product.find({})
       .populate({ path: "category", select: "name _id" })
       .sort({ _id: -1 });
-    res.send(products);
+    res.status(200).json({ products });
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
@@ -92,25 +92,19 @@ const updateProduct = async (req, res) => {
 const updateStatus = async (req, res) => {
   try {
     const newStatus = req.body.status;
-    Product.updateOne(
+
+    await Product.updateOne(
       { _id: req.params.id },
       {
         $set: {
           status: newStatus,
         },
-      },
-      (err) => {
-        if (err) {
-          res.status(500).send({
-            message: err.message,
-          });
-        } else {
-          res.status(200).send({
-            message: `Product ${newStatus} Successfully!`,
-          });
-        }
       }
     );
+
+    res.status(200).send({
+      message: `Product ${newStatus} successfully!`,
+    });
   } catch (err) {
     res.status(500).send({ message: err.message });
   }
