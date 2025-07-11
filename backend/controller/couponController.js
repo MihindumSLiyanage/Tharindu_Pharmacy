@@ -22,6 +22,19 @@ const getAllCoupons = async (req, res) => {
   }
 };
 
+const getShowingCoupons = async (req, res) => {
+  try {
+    const coupons = await Coupon.find({
+      status: "show",
+    }).sort({ _id: -1 });
+    res.send(coupons);
+  } catch (err) {
+    res.status(500).send({
+      message: err.message,
+    });
+  }
+};
+
 // Get coupon by ID
 const getCouponById = async (req, res) => {
   try {
@@ -111,6 +124,7 @@ const deleteCoupon = async (req, res) => {
 module.exports = {
   addCoupon,
   getAllCoupons,
+  getShowingCoupons,
   updateStatus,
   getCouponById,
   updateCoupon,

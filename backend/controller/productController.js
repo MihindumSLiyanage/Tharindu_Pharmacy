@@ -71,9 +71,13 @@ const updateProduct = async (req, res) => {
     product.slug = req.body.slug;
     product.category = req.body.category;
     product.image = req.body.image;
-    product.prices.originalPrice = req.body.originalPrice;
-    product.prices.price = req.body.price;
-    product.prices.discount = req.body.discount;
+
+    if (req.body.prices) {
+      product.prices.originalPrice = req.body.prices.originalPrice;
+      product.prices.price = req.body.prices.price;
+      product.prices.discount = req.body.prices.discount;
+    }
+    
     product.quantity = req.body.quantity;
     product.expiryDate = req.body.expiryDate;
     product.description = req.body.description;

@@ -32,7 +32,7 @@ router.get("/", getAllProducts);
 router.get("/product/:slug", getProductBySlug);
 
 //update a product
-router.patch("/:id", isAuth, isAdmin, updateProduct);
+router.put("/:id", isAuth, isAdmin, updateProduct);
 
 //update a product status
 router.put("/status/:id", isAuth, isAdmin, updateStatus);

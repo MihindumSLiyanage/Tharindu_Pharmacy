@@ -91,14 +91,12 @@ const ProductModal = ({ modalOpen, setModalOpen, product }) => {
 
             <div className="w-full flex flex-col p-6 md:p-7 text-left">
               <div className="mb-3 md:mb-4">
-                <Link href={`/product/${product.slug}`}>
-                  <h1
-                    onClick={() => setModalOpen(false)}
-                    className="text-heading text-xl md:text-2xl font-semibold font-serif hover:text-emerald-500 cursor-pointer transition-colors duration-200" // Reduced text size
-                  >
-                    {product?.name}
-                  </h1>
-                </Link>
+                <h1
+                  onClick={() => setModalOpen(false)}
+                  className="text-heading text-xl md:text-2xl font-semibold font-serif hover:text-emerald-500 cursor-pointer transition-colors duration-200" // Reduced text size
+                >
+                  {product?.name}
+                </h1>
               </div>
               <p className="text-sm leading-6 text-gray-600 md:leading-7 mb-5">
                 {product?.description}

@@ -11,7 +11,7 @@ const Coupon = ({ couponInHome }) => {
   const [copiedCode, setCopiedCode] = useState("");
   const [copied, setCopied] = useState(false);
 
-  const { data, error } = useAsync(CouponServices.getAllCoupons);
+  const { data, error } = useAsync(CouponServices.getShowingCoupons);
 
   const handleCopied = (code) => {
     setCopiedCode(code);

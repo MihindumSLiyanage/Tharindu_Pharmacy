@@ -3,6 +3,7 @@ const router = express.Router();
 const {
   addCoupon,
   getAllCoupons,
+  getShowingCoupons,
   getCouponById,
   updateCoupon,
   updateStatus,
@@ -15,6 +16,9 @@ router.post("/add", isAuth, isAdmin, addCoupon);
 
 //get all coupon
 router.get("/", getAllCoupons);
+
+//get only enable coupon
+router.get("/show", getShowingCoupons);
 
 //get a coupon
 router.get("/:id", getCouponById);
